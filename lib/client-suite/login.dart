@@ -3,7 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'signup.dart';
+import 'my-account-dashboard.dart';
 
 /// HOVER WIDGET
 class HoverWidget extends StatefulWidget {
@@ -45,7 +47,7 @@ class AuthService {
 
   Future<UserCredential> guestLogin() async => _auth.signInAnonymously();
 
-  /// 🔥 GOOGLE LOGIN FOR WEB
+  /// GOOGLE LOGIN (WEB POPUP)
   Future<UserCredential> googleWebPopup() async {
     final provider = GoogleAuthProvider();
     return await _auth.signInWithPopup(provider);
@@ -73,16 +75,26 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
   void _sn(String t) =>
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t)));
 
+  /// ---------------- EMAIL LOGIN ----------------
   Future<void> login() async {
     if (!_form.currentState!.validate()) return;
 
     setState(() => loading = true);
+
     try {
       await AuthService.instance.loginEmail(_email.text, _password.text);
       _sn("Login successful");
+
+      // ⭐ REDIRECT TO DASHBOARD
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MyAccountDashboard()),
+      );
+
     } catch (e) {
       _sn("Login failed");
     }
+
     if (mounted) setState(() => loading = false);
   }
 
@@ -100,7 +112,7 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
         ),
       );
 
-  /// LEFT FORM PANEL
+  /// LEFT PANEL
   Widget leftPanel() => SizedBox(
         width: LW,
         child: Form(
@@ -111,6 +123,7 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
               const Text("Email",
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
+
               HoverWidget(
                 builder: (_) => TextFormField(
                   controller: _email,
@@ -119,16 +132,18 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
                   decoration: deco("Enter your email"),
                 ),
               ),
+
               const SizedBox(height: 25),
+
               const Text("Password",
                   style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
+
               HoverWidget(
                 builder: (_) => TextFormField(
                   controller: _password,
                   obscureText: !show,
-                  validator: (v) =>
-                      v!.isEmpty ? "Enter password" : null,
+                  validator: (v) => v!.isEmpty ? "Enter password" : null,
                   decoration: deco("Enter your password").copyWith(
                     suffixIcon: IconButton(
                       icon: Icon(show
@@ -139,7 +154,9 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 25),
+
               HoverWidget(
                 builder: (hover) => AnimatedOpacity(
                   duration: const Duration(milliseconds: 150),
@@ -163,7 +180,9 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 12),
+
               Center(
                 child: HoverWidget(
                   builder: (hover) => GestureDetector(
@@ -177,17 +196,18 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
                     child: RichText(
                       text: TextSpan(
                         text: "Don’t have an account? ",
-                        style:
-                            TextStyle(color: Colors.grey[700], fontSize: 13),
+                        style: TextStyle(
+                            color: Colors.grey[700], fontSize: 13),
                         children: [
                           TextSpan(
                             text: "Sign Up",
                             style: TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w700,
-                                decoration: hover
-                                    ? TextDecoration.underline
-                                    : TextDecoration.none),
+                              color: Colors.black,
+                              fontWeight: FontWeight.w700,
+                              decoration: hover
+                                  ? TextDecoration.underline
+                                  : TextDecoration.none,
+                            ),
                           )
                         ],
                       ),
@@ -245,45 +265,61 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
 
   /// RIGHT PANEL
   Widget rightPanel() => Padding(
-  padding: const EdgeInsets.only(top: 60), // ALIGN WITH DIVIDER
-  child: SizedBox(
-    width: RW,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("Continue With",
-            style: GoogleFonts.montserrat(
-                fontSize: 20, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 25),
+        padding: const EdgeInsets.only(top: 60),
+        child: SizedBox(
+          width: RW,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Continue With",
+                  style: GoogleFonts.montserrat(
+                      fontSize: 20, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 25),
 
-        // GOOGLE BUTTON (WEB POPUP)
-        socialBtn(
-          icon: Image.asset("assets/icons/google_logo.png", height: 22),
-          text: "Google",
-          onTap: () async {
-            try {
-              final r = await AuthService.instance.googleWebPopup();
-              _sn("Logged in as ${r.user?.email}");
-            } catch (_) {
-              _sn("Google sign-in failed");
-            }
-          },
+              // GOOGLE BUTTON
+              socialBtn(
+                icon: Image.asset("assets/icons/google_logo.png", height: 22),
+                text: "Google",
+                onTap: () async {
+                  try {
+                    final r = await AuthService.instance.googleWebPopup();
+                    _sn("Logged in as ${r.user?.email}");
+
+                    // ⭐ REDIRECT
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const MyAccountDashboard()),
+                    );
+
+                  } catch (_) {
+                    _sn("Google sign-in failed");
+                  }
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // GUEST LOGIN
+              socialBtn(
+                icon: const Icon(Icons.person_outline),
+                text: "Guest Mode",
+                onTap: () async {
+                  await AuthService.instance.guestLogin();
+                  _sn("Logged in as Guest");
+
+                  // ⭐ REDIRECT
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const MyAccountDashboard()),
+                  );
+                },
+              ),
+            ],
+          ),
         ),
-
-        const SizedBox(height: 16),
-
-        socialBtn(
-          icon: const Icon(Icons.person_outline),
-          text: "Guest Mode",
-          onTap: () async {
-            await AuthService.instance.guestLogin();
-            _sn("Logged in as Guest");
-          },
-        ),
-      ],
-    ),
-  ),
-);
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -312,6 +348,7 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
                               blurRadius: 50)
                         ],
                       ),
+
                       child: isMobile
                           ? Column(
                               children: [
