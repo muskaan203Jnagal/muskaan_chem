@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'account-settings.dart';
+import 'my-addresses.dart';
 
 class MyAccountDashboard extends StatelessWidget {
   const MyAccountDashboard({Key? key}) : super(key: key);
@@ -150,27 +151,38 @@ class MyAccountDashboard extends StatelessWidget {
                                     width: cardWidth,
                                     child: DashboardActionCard(
                                       title: 'My Orders',
-                                      subtitle: 'View your past orders & details',
+                                      subtitle:
+                                          'View your past orders & details',
                                       gold: _gold,
                                       radius: _radius,
                                     ),
                                   ),
                                   SizedBox(
                                     width: cardWidth,
-                                    child: DashboardActionCard(
-                                      title: 'My Addresses',
-                                      subtitle:
-                                          'Manage saved delivery addresses',
-                                      gold: _gold,
-                                      radius: _radius,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const MyAddressesPage(),
+                                          ),
+                                        );
+                                      },
+                                      child: DashboardActionCard(
+                                        title: 'My Addresses',
+                                        subtitle:
+                                            'Manage saved delivery addresses',
+                                        gold: _gold,
+                                        radius: _radius,
+                                      ),
                                     ),
                                   ),
                                   SizedBox(
                                     width: cardWidth,
                                     child: DashboardActionCard(
                                       title: 'My Wishlist',
-                                      subtitle:
-                                          'Your saved favourite products',
+                                      subtitle: 'Your saved favourite products',
                                       gold: _gold,
                                       radius: _radius,
                                     ),
@@ -218,8 +230,7 @@ class MyAccountDashboard extends StatelessWidget {
                                   );
                                 },
                                 child: AnimatedContainer(
-                                  duration:
-                                      const Duration(milliseconds: 200),
+                                  duration: const Duration(milliseconds: 200),
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 32,
                                     vertical: 14,
