@@ -1,12 +1,22 @@
 // ============================================================================
-// lib/admin/admin.dart
+// lib/admin/admin.dart (UPDATED FULL CONTENT)
 // ============================================================================
 
 import 'package:flutter/material.dart';
 import 'catalog.dart';
+import 'inbox.dart';
+import 'users.dart';
+import 'marketing.dart'; 
+import 'reviews_moderation.dart';
+// ADDED: Import the functional OrdersPage from its own file
+import 'orders.dart'; 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../firebase_options.dart';
+
+// NOTE: The OrdersPage placeholder has been removed from this file.
+// It is now imported from 'orders.dart'
+
 class AdminPage extends StatefulWidget {
   const AdminPage({Key? key}) : super(key: key);
 
@@ -20,7 +30,11 @@ class _AdminPageState extends State<AdminPage> {
   final List<Widget> _pages = [
     const DashboardPage(),
     const CatalogPage(),
-    const OrdersPage(),
+    const InboxPage(),
+    const UsersPage(),
+    const MarketingPage(),
+    const ReviewsModerationPage(),
+    const OrdersPage(), // Now using the imported OrdersPage
     const CustomersPage(),
     const SettingsPage(),
   ];
@@ -74,6 +88,23 @@ class _AdminPageState extends State<AdminPage> {
                 label: Text('Catalog'),
               ),
               NavigationRailDestination(
+                icon: Icon(Icons.inbox),
+                label: Text('Inbox'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.people_alt),
+                label: Text('Users'),
+              ),
+              NavigationRailDestination(
+                icon: Icon(Icons.local_offer),
+                label: Text('Marketing'),
+              ),
+              // ADDED: Navigation Item for Reviews
+              NavigationRailDestination(
+                icon: Icon(Icons.star_rate),
+                label: Text('Reviews'),
+              ),
+              NavigationRailDestination(
                 icon: Icon(Icons.shopping_cart),
                 label: Text('Orders'),
               ),
@@ -98,7 +129,8 @@ class _AdminPageState extends State<AdminPage> {
   }
 }
 
-// Placeholder pages
+// Placeholder pages that are still needed in this file:
+
 class DashboardPage extends StatelessWidget {
   const DashboardPage({Key? key}) : super(key: key);
 
@@ -120,36 +152,6 @@ class DashboardPage extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               'Dashboard Coming Soon',
-              style: TextStyle(fontSize: 24, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class OrdersPage extends StatelessWidget {
-  const OrdersPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Orders'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.shopping_cart, size: 80, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              'Orders Management Coming Soon',
               style: TextStyle(fontSize: 24, color: Colors.grey[600]),
             ),
           ],
@@ -220,7 +222,6 @@ class SettingsPage extends StatelessWidget {
 }
 
 
-
 Future<void> main() async {
 WidgetsFlutterBinding.ensureInitialized();
 
@@ -255,4 +256,3 @@ home: const AdminPage(),
 );
 }
 }
-
