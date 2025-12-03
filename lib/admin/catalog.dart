@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class CatalogPage extends StatefulWidget {
   const CatalogPage({Key? key}) : super(key: key);
@@ -192,7 +194,7 @@ class _CatalogPageState extends State<CatalogPage> {
                               });
                             },
                             cells: [
-                              DataCell(_buildThumb(data['imageUrl'])),
+                              DataCell(_buildThumb(data['mainImageUrl'])), // UPDATED: Use mainImageUrl
                               DataCell(
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -345,12 +347,23 @@ class _CatalogPageState extends State<CatalogPage> {
                   decoration: InputDecoration(
                     hintText: 'Search by name, SKU, category...',
                     prefixIcon: const Icon(Icons.search, size: 20),
+                    // NEW: Clear button and no constant re-render
+                    suffixIcon: _searchQuery.isNotEmpty ? IconButton(
+                      icon: const Icon(Icons.clear, size: 20),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {
+                          _searchQuery = '';
+                        });
+                      },
+                    ) : null,
                     contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     fillColor: Colors.grey[50],
                     filled: true,
                   ),
-                  onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                  // FIX: Only update _searchQuery on submit to prevent focus loss glitch
+                  onSubmitted: (v) => setState(() => _searchQuery = v.toLowerCase()),
                 ),
               ),
               const SizedBox(width: 16),
@@ -451,7 +464,7 @@ class _CatalogPageState extends State<CatalogPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Text('Rows per page:'),
+          const Text('Rows per page:'),
           const SizedBox(width: 8),
           DropdownButton<int>(
             value: _rowsPerPage,
@@ -481,6 +494,7 @@ class _CatalogPageState extends State<CatalogPage> {
   // -- Visual Helpers --
 
   Widget _buildThumb(String? url) {
+    // This now receives mainImageUrl
     if (url == null || url.isEmpty) {
       return Container(
         width: 40,
@@ -492,6 +506,8 @@ class _CatalogPageState extends State<CatalogPage> {
 
     // 1. THE MAGIC FIX: Wrap the URL in a CORS proxy
     // This allows the browser to load images from Pinterest/Google/etc.
+    // NOTE: If using Firebase Storage, you often don't need this proxy,
+    // but keeping it here for robustness if external URLs are mixed in.
     final proxiedUrl = 'https://wsrv.nl/?url=${Uri.encodeComponent(url)}&w=100&h=100&fit=cover';
 
     return Container(
@@ -504,7 +520,7 @@ class _CatalogPageState extends State<CatalogPage> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(4),
         child: Image.network(
-          proxiedUrl, // Use the proxied URL here
+          proxiedUrl, 
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
             return const Center(child: Icon(Icons.broken_image, size: 16, color: Colors.grey));
@@ -611,11 +627,12 @@ class _CatalogPageState extends State<CatalogPage> {
     copy['name'] = '${copy['name']} (Copy)';
     copy['sku'] = '${copy['sku']}-COPY'; // Avoid duplicate SKU collision
     copy['status'] = 'draft'; // Reset to draft
+    // Image data is carried over (imageUrls, mainImageUrl)
     copy['createdAt'] = FieldValue.serverTimestamp();
     copy['updatedAt'] = FieldValue.serverTimestamp();
     
     await _firestore.collection('products').add(copy);
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Product Duplicated')));
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Product Duplicated')));
   }
 
   void _deleteProduct(BuildContext context, String id) {
@@ -638,7 +655,19 @@ class _CatalogPageState extends State<CatalogPage> {
     );
   }
 
-  void _showQuickView(String id, Map<String, dynamic> data) {
+  // In _CatalogPageState
+// ...
+
+void _showQuickView(String id, Map<String, dynamic> data) {
+    // 1. Get the mainImageUrl from the product data
+    final imageUrl = data['mainImageUrl'] as String?;
+    
+    // 2. Apply the CORS Proxy (wsrv.nl) only if the URL exists and is not empty.
+    // This fixes the HTTP status code 0 / CORS error on Flutter Web.
+    final proxiedUrl = (imageUrl != null && imageUrl.isNotEmpty)
+        ? 'https://wsrv.nl/?url=${Uri.encodeComponent(imageUrl)}' 
+        : null;
+
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -668,8 +697,14 @@ class _CatalogPageState extends State<CatalogPage> {
                       width: 200,
                       height: 200,
                       color: Colors.grey[100],
-                      child: data['imageUrl'] != null 
-                        ? Image.network(data['imageUrl'], fit: BoxFit.cover)
+                      child: proxiedUrl != null // Use the proxied URL for display
+                        ? Image.network(
+                            proxiedUrl, 
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                                return const Center(child: Icon(Icons.broken_image, size: 50, color: Colors.grey));
+                            },
+                          )
                         : const Icon(Icons.image, size: 50, color: Colors.grey),
                     ),
                   ),
@@ -722,10 +757,9 @@ class _CatalogPageState extends State<CatalogPage> {
         ),
       ),
     );
-  }
+}
 
   void _showSchemaDialog(BuildContext context) {
-    // Kept from your original code, simplified for brevity here
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -753,7 +787,8 @@ Collection: products
 ├── category (string) [Index Required]
 ├── subCategory (string) - Optional
 ├── brand (string) - Optional
-├── imageUrl (string)
+├── imageUrls (array<string>) // UPDATED: List of all uploaded image URLs
+├── mainImageUrl (string)     // NEW: The URL for the primary product image
 ├── status (string): 'active' | 'inactive' | 'draft'
 ├── salesCount (number)
 ├── createdAt (timestamp)
@@ -769,7 +804,8 @@ Collection: products
   }
 }
 
-// Updated Form Dialog to support optional category and new fields
+
+// Form Dialog Updated for Image Upload and Selection
 class ProductFormDialog extends StatefulWidget {
   final String title;
   final Map<String, dynamic>? initialData;
@@ -783,8 +819,19 @@ class ProductFormDialog extends StatefulWidget {
 
 class _ProductFormDialogState extends State<ProductFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameCtrl, _descCtrl, _priceCtrl, _catCtrl, _imgCtrl, _stockCtrl, _skuCtrl, _brandCtrl;
+  // Removed _imgCtrl
+  late TextEditingController _nameCtrl, _descCtrl, _priceCtrl, _catCtrl, _stockCtrl, _skuCtrl, _brandCtrl;
   String _status = 'active';
+
+  // NEW: Image Upload State
+  final ImagePicker _picker = ImagePicker();
+  // NOTE: Assuming FirebaseStorage is correctly imported and initialized
+  final FirebaseStorage _storage = FirebaseStorage.instance; 
+  static const int MAX_FILE_SIZE = 500 * 1024; // 0.5 MB limit
+
+  List<String> _imageUrls = [];
+  String? _mainImageUrl;
+  bool _isUploading = false;
 
   @override
   void initState() {
@@ -794,15 +841,121 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
     _descCtrl = TextEditingController(text: d['description']);
     _priceCtrl = TextEditingController(text: d['price']?.toString());
     _catCtrl = TextEditingController(text: d['category']);
-    _imgCtrl = TextEditingController(text: d['imageUrl']);
     _stockCtrl = TextEditingController(text: d['stock']?.toString());
     _skuCtrl = TextEditingController(text: d['sku']);
     _brandCtrl = TextEditingController(text: d['brand']);
     _status = d['status'] ?? 'active';
+    
+    // Initialize image state
+    if (d['imageUrls'] is List) {
+      _imageUrls = List<String>.from(d['imageUrls']);
+    }
+    _mainImageUrl = d['mainImageUrl'];
+  }
+  
+  // Image Upload Logic (remains unchanged)
+  Future<void> _pickAndUploadImages() async {
+    final pickedFiles = await _picker.pickMultiImage(imageQuality: 75); 
+
+    if (pickedFiles.isEmpty) return;
+
+    setState(() => _isUploading = true);
+
+    try {
+      for (final XFile file in pickedFiles) {
+        final bytes = await file.readAsBytes();
+        
+        // 1. Size Check
+        if (bytes.lengthInBytes > MAX_FILE_SIZE) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Skipped: ${file.name} is larger than 0.5MB limit.'),
+              backgroundColor: Colors.orange,
+            ));
+          }
+          continue;
+        }
+
+        // 2. Upload to Firebase Storage
+        final fileName = 'products/${DateTime.now().millisecondsSinceEpoch}_${file.name}';
+        final ref = _storage.ref().child(fileName);
+        
+        await ref.putData(bytes); 
+        final downloadUrl = await ref.getDownloadURL();
+
+        setState(() {
+          _imageUrls.add(downloadUrl);
+          if (_mainImageUrl == null) {
+            _mainImageUrl = downloadUrl;
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Upload failed: $e. Check Firebase Storage rules/permissions.'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    } finally {
+      setState(() => _isUploading = false);
+    }
+  }
+  
+  // UPDATED: Helper to build a preview/selection tile with CORS FIX
+  Widget _buildImageTile(String url, bool isMain) {
+    // FIX: Apply CORS proxy to the image URL for loading in Flutter Web
+    // We add size parameters (w=80&h=80) to optimize the small tile loading.
+    final proxiedUrl = 'https://wsrv.nl/?url=${Uri.encodeComponent(url)}&w=80&h=80&fit=cover';
+
+    return Stack(
+      children: [
+        GestureDetector(
+          onTap: () => setState(() => _mainImageUrl = url),
+          child: Container(
+            width: 80,
+            height: 80,
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: isMain ? Colors.blue : Colors.grey[300]!, width: isMain ? 3 : 1),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(7),
+              child: Image.network(
+                proxiedUrl, // <-- USING PROXIED URL HERE
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, size: 30, color: Colors.grey)),
+              ),
+            ),
+          ),
+        ),
+        if (isMain) 
+          const Positioned(
+            top: 4, right: 12,
+            child: Icon(Icons.check_circle, color: Colors.blue, size: 16),
+          ),
+        Positioned(
+          top: -10, left: -10,
+          child: IconButton(
+            icon: Icon(Icons.close, color: Colors.red[800], size: 18),
+            onPressed: () {
+              setState(() {
+                _imageUrls.remove(url);
+                if (_mainImageUrl == url) {
+                  _mainImageUrl = _imageUrls.isNotEmpty ? _imageUrls.first : null;
+                }
+              });
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    // ... (build method remains the same)
     return Dialog(
       child: Container(
         padding: const EdgeInsets.all(24),
@@ -836,13 +989,50 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
                    Expanded(child: _buildField(_brandCtrl, 'Brand (Optional)', required: false)),
                 ]),
                 const SizedBox(height: 16),
-                _buildField(_imgCtrl, 'Image URL'),
+                
+                // --- Image Uploader Section ---
+                const Text('Product Images', style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: ElevatedButton.icon(
+                        onPressed: _isUploading ? null : _pickAndUploadImages,
+                        icon: _isUploading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.cloud_upload),
+                        label: Text(_isUploading ? 'Uploading...' : 'Upload Images (<0.5MB)'),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Image Previews & Selection
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            if (_imageUrls.isEmpty) 
+                              Text('No images uploaded yet.', style: TextStyle(color: Colors.grey[600])),
+                            ..._imageUrls.map((url) => _buildImageTile(url, url == _mainImageUrl)).toList(), // Uses the fixed _buildImageTile
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_imageUrls.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text('Click an image to set it as the main product image (Blue Border).', style: TextStyle(fontSize: 11, color: Colors.blue[800])),
+                  ),
+                // --- END Image Uploader Section ---
+
                 const SizedBox(height: 16),
                 _buildField(_descCtrl, 'Description', lines: 3),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: _status,
-                  decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(labelText: 'Status', border: const OutlineInputBorder()),
                   items: ['active', 'inactive', 'draft'].map((s) => DropdownMenuItem(value: s, child: Text(s.toUpperCase()))).toList(),
                   onChanged: (v) => setState(() => _status = v!),
                 ),
@@ -861,7 +1051,8 @@ class _ProductFormDialogState extends State<ProductFormDialog> {
                             'price': double.tryParse(_priceCtrl.text) ?? 0.0,
                             'category': _catCtrl.text.isEmpty ? null : _catCtrl.text,
                             'brand': _brandCtrl.text.isEmpty ? null : _brandCtrl.text,
-                            'imageUrl': _imgCtrl.text,
+                            'imageUrls': _imageUrls, 
+                            'mainImageUrl': _mainImageUrl,
                             'stock': int.tryParse(_stockCtrl.text) ?? 0,
                             'sku': _skuCtrl.text,
                             'status': _status,
