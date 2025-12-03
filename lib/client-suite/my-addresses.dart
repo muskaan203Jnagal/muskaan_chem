@@ -1,9 +1,22 @@
-// lib/client-suite/my_addresses.dart
+// lib/client-suite/my-addresses.dart
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
+import 'widgets/top_banner_tabs.dart';
+
+const Color _black = Colors.black;
+const Color _white = Colors.white;
+const Color _gold = Color(0xFFC9A34E);
+const double _maxWidth = 1000;
+
+/// ---------------------------------------------------------------------------
+/// ADDRESS MODEL
+/// ---------------------------------------------------------------------------
 class AddressModel {
+  final String id;
   String firstName;
   String lastName;
   String line1;
@@ -14,8 +27,10 @@ class AddressModel {
   String postalCode;
   String phone;
   bool isDefault;
+  Timestamp? createdAt;
 
   AddressModel({
+    required this.id,
     required this.firstName,
     required this.lastName,
     required this.line1,
@@ -25,10 +40,48 @@ class AddressModel {
     required this.country,
     required this.postalCode,
     required this.phone,
-    this.isDefault = false,
+    required this.isDefault,
+    this.createdAt,
   });
+
+  factory AddressModel.fromDoc(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    return AddressModel(
+      id: doc.id,
+      firstName: data['firstName'] ?? '',
+      lastName: data['lastName'] ?? '',
+      line1: data['line1'] ?? '',
+      line2: data['line2'] ?? '',
+      city: data['city'] ?? '',
+      state: data['state'] ?? '',
+      country: data['country'] ?? '',
+      postalCode: data['postalCode'] ?? '',
+      phone: data['phone'] ?? '',
+      isDefault: data['isDefault'] ?? false,
+      createdAt: data['createdAt'],
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      "firstName": firstName,
+      "lastName": lastName,
+      "line1": line1,
+      "line2": line2 ?? "",
+      "city": city,
+      "state": state,
+      "country": country,
+      "postalCode": postalCode,
+      "phone": phone,
+      "isDefault": isDefault,
+      "createdAt": createdAt ?? FieldValue.serverTimestamp(),
+    };
+  }
 }
 
+/// ---------------------------------------------------------------------------
+/// MAIN PAGE
+/// ---------------------------------------------------------------------------
 class MyAddressesPage extends StatefulWidget {
   const MyAddressesPage({Key? key}) : super(key: key);
 
@@ -37,48 +90,89 @@ class MyAddressesPage extends StatefulWidget {
 }
 
 class _MyAddressesPageState extends State<MyAddressesPage> {
-  // Colors match account_settings.dart
-  static const Color _black = Colors.black;
-  static const Color _white = Colors.white;
-  static const Color _gold = Color(0xFFC9A34E);
-  static const double _maxWidth = 1000;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Temporary local storage for addresses
-  final List<AddressModel> _addresses = [];
+  late String _uid;
+  bool _loadingUser = true;
 
-  // Helpers to open form (for add or edit)
-  Future<void> _openAddressForm({AddressModel? editing, int? index}) async {
-    final firstName = TextEditingController(text: editing?.firstName ?? "");
-    final lastName = TextEditingController(text: editing?.lastName ?? "");
-    final line1 = TextEditingController(text: editing?.line1 ?? "");
-    final line2 = TextEditingController(text: editing?.line2 ?? "");
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      setState(() => _loadingUser = false);
+      return;
+    }
+    _uid = user.uid;
+    setState(() => _loadingUser = false);
+  }
+
+  CollectionReference<Map<String, dynamic>> _addressesRef() {
+    return _db.collection("users").doc(_uid).collection("addresses");
+  }
+
+  Future<void> _deleteAddressFromFirestore(String id) async {
+    await _addressesRef().doc(id).delete();
+  }
+
+  Future<void> _setDefaultAddress(String id) async {
+    final batch = _db.batch();
+    final snap = await _addressesRef().get();
+
+    for (var d in snap.docs) {
+      batch.update(_addressesRef().doc(d.id), {"isDefault": d.id == id});
+    }
+    await batch.commit();
+  }
+
+  /// -----------------------------------------------------------------------
+  /// FULL RESPONSIVE DIALOG (desktop + mobile)
+  /// -----------------------------------------------------------------------
+  Future<void> _openAddressDialog({AddressModel? editing}) async {
+    final first = TextEditingController(text: editing?.firstName ?? "");
+    final last = TextEditingController(text: editing?.lastName ?? "");
+    final l1 = TextEditingController(text: editing?.line1 ?? "");
+    final l2 = TextEditingController(text: editing?.line2 ?? "");
     final city = TextEditingController(text: editing?.city ?? "");
-    final state = TextEditingController(text: editing?.state ?? "");
+    final st = TextEditingController(text: editing?.state ?? "");
     final country = TextEditingController(text: editing?.country ?? "");
-    final postalCode = TextEditingController(text: editing?.postalCode ?? "");
+    final zip = TextEditingController(text: editing?.postalCode ?? "");
     final phone = TextEditingController(text: editing?.phone ?? "");
     bool isDefault = editing?.isDefault ?? false;
 
-    await showDialog<void>(
+    await showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        final isWide = MediaQuery.of(context).size.width > 760;
+        final isMobile = MediaQuery.of(context).size.width < 500;
+
+        final dialogWidth = isMobile
+            ? MediaQuery.of(context).size.width * 0.95
+            : 700.0;
+
         return Dialog(
-          insetPadding: const EdgeInsets.symmetric(
-            horizontal: 24,
-            vertical: 24,
+          backgroundColor: _white,
+          insetPadding: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
-            child: Container(
-              color: _white,
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Title + close
-                  Row(
+            constraints: BoxConstraints(maxWidth: dialogWidth),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // HEADER
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+                  child: Row(
                     children: [
                       Expanded(
                         child: Text(
@@ -86,253 +180,82 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
                           style: GoogleFonts.montserrat(
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
+                            color: _black,
                           ),
                         ),
                       ),
                       InkWell(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: const Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Icon(Icons.close, size: 20),
-                        ),
+                        onTap: () => Navigator.pop(context),
+                        child: const Icon(Icons.close, color: _black, size: 22),
                       ),
                     ],
                   ),
+                ),
 
-                  const SizedBox(height: 8),
+                const Divider(height: 1, color: Colors.black12),
 
-                  // Use a scrollable area for many fields
-                  Flexible(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 6),
-
-                          // name row
-                          isWide
-                              ? Row(
-                                  children: [
-                                    Expanded(
-                                      child: _inputField(
-                                        label: "First Name",
-                                        controller: firstName,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _inputField(
-                                        label: "Last Name",
-                                        controller: lastName,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Column(
-                                  children: [
-                                    _inputField(
-                                      label: "First Name",
-                                      controller: firstName,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _inputField(
-                                      label: "Last Name",
-                                      controller: lastName,
-                                    ),
-                                  ],
-                                ),
-                          const SizedBox(height: 10),
-
-                          // Address lines
-                          _inputField(
-                            label: "Address Line 1",
-                            controller: line1,
-                          ),
-                          const SizedBox(height: 8),
-                          _inputField(
-                            label: "Address Line 2 (Optional)",
-                            controller: line2,
-                          ),
-                          const SizedBox(height: 8),
-
-                          // city/state row
-                          isWide
-                              ? Row(
-                                  children: [
-                                    Expanded(
-                                      child: _inputField(
-                                        label: "City",
-                                        controller: city,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _inputField(
-                                        label: "State / Region",
-                                        controller: state,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Column(
-                                  children: [
-                                    _inputField(
-                                      label: "City",
-                                      controller: city,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _inputField(
-                                      label: "State / Region",
-                                      controller: state,
-                                    ),
-                                  ],
-                                ),
-                          const SizedBox(height: 8),
-
-                          // country / postal
-                          isWide
-                              ? Row(
-                                  children: [
-                                    Expanded(
-                                      child: _selectCountry(
-                                        label: "Country",
-                                        controller: country,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: _inputField(
-                                        label: "Zip / Postal Code",
-                                        controller: postalCode,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Column(
-                                  children: [
-                                    _selectCountry(
-                                      label: "Country",
-                                      controller: country,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _inputField(
-                                      label: "Zip / Postal Code",
-                                      controller: postalCode,
-                                    ),
-                                  ],
-                                ),
-                          const SizedBox(height: 8),
-
-                          // phone
-                          _inputField(label: "Phone Number", controller: phone),
-                          const SizedBox(height: 12),
-
-                          // default checkbox
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: isDefault,
-                                activeColor: _black,
-                                onChanged: (v) {
-                                  setState(() => isDefault = v ?? false);
-                                  // rebuild the dialog UI by using a StatefulBuilder
-                                },
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                "Make this my default address",
-                                style: GoogleFonts.montserrat(fontSize: 13),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                        ],
-                      ),
+                // SCROLLABLE CONTENT
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: _buildAddressForm(
+                      first,
+                      last,
+                      l1,
+                      l2,
+                      city,
+                      st,
+                      country,
+                      zip,
+                      phone,
+                      () {
+                        isDefault = !isDefault;
+                        (context as Element).markNeedsBuild();
+                      },
+                      isDefault,
                     ),
                   ),
+                ),
 
-                  const SizedBox(height: 12),
-
-                  // Actions row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: _black),
-                        ),
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text("Cancel", style: GoogleFonts.montserrat()),
+                // BOTTOM BUTTON
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(right: 20, bottom: 20),
+                  alignment: Alignment.centerRight,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _black,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 22,
+                        vertical: 14,
                       ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _black,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                        ),
-                        onPressed: () {
-                          // Basic validation
-                          if (firstName.text.trim().isEmpty ||
-                              line1.text.trim().isEmpty ||
-                              city.text.trim().isEmpty ||
-                              phone.text.trim().isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                  "Please fill the required fields",
-                                ),
-                                backgroundColor: _black,
-                              ),
-                            );
-                            return;
-                          }
-
-                          // Save or update
-                          final model = AddressModel(
-                            firstName: firstName.text.trim(),
-                            lastName: lastName.text.trim(),
-                            line1: line1.text.trim(),
-                            line2: line2.text.trim().isEmpty
-                                ? null
-                                : line2.text.trim(),
-                            city: city.text.trim(),
-                            state: state.text.trim(),
-                            country: country.text.trim(),
-                            postalCode: postalCode.text.trim(),
-                            phone: phone.text.trim(),
-                            isDefault: isDefault,
-                          );
-
-                          setState(() {
-                            if (isDefault) {
-                              // unset other defaults
-                              for (var a in _addresses) {
-                                a.isDefault = false;
-                              }
-                            }
-                            if (editing != null && index != null) {
-                              _addresses[index] = model;
-                            } else {
-                              _addresses.add(model);
-                            }
-                          });
-
-                          Navigator.of(context).pop();
-                        },
-                        child: Text(
-                          "Save Address",
-                          style: GoogleFonts.montserrat(
-                            color: _white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ],
+                    ),
+                    onPressed: () async {
+                      await _saveAddress(
+                        editing,
+                        first,
+                        last,
+                        l1,
+                        l2,
+                        city,
+                        st,
+                        country,
+                        zip,
+                        phone,
+                        isDefault,
+                      );
+                      Navigator.pop(context);
+                    },
+                    child: Text(
+                      "Save Address",
+                      style: GoogleFonts.montserrat(color: _white),
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
@@ -340,92 +263,182 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
     );
   }
 
-  // small input builder (focus gives gold border)
-  Widget _inputField({
-    required String label,
-    required TextEditingController controller,
-  }) {
+  /// -----------------------------------------------------------------------
+  /// SAVE ADDRESS LOGIC
+  /// -----------------------------------------------------------------------
+  Future<void> _saveAddress(
+    AddressModel? editing,
+    TextEditingController first,
+    TextEditingController last,
+    TextEditingController l1,
+    TextEditingController l2,
+    TextEditingController city,
+    TextEditingController st,
+    TextEditingController country,
+    TextEditingController zip,
+    TextEditingController phone,
+    bool isDefault,
+  ) async {
+    if (first.text.trim().isEmpty ||
+        l1.text.trim().isEmpty ||
+        city.text.trim().isEmpty ||
+        phone.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please fill required fields")),
+      );
+      return;
+    }
+
+    final data = AddressModel(
+      id: editing?.id ?? "",
+      firstName: first.text.trim(),
+      lastName: last.text.trim(),
+      line1: l1.text.trim(),
+      line2: l2.text.trim().isEmpty ? null : l2.text.trim(),
+      city: city.text.trim(),
+      state: st.text.trim(),
+      country: country.text.trim(),
+      postalCode: zip.text.trim(),
+      phone: phone.text.trim(),
+      isDefault: isDefault,
+      createdAt: editing?.createdAt,
+    );
+
+    if (editing == null) {
+      final docRef = await _addressesRef().add(data.toMap());
+      if (isDefault) await _setDefaultAddress(docRef.id);
+    } else {
+      await _addressesRef().doc(editing.id).update(data.toMap());
+      if (isDefault) await _setDefaultAddress(editing.id);
+    }
+  }
+
+  /// -----------------------------------------------------------------------
+  /// UI: ADDRESS FORM (shared by dialog mobile + desktop)
+  /// -----------------------------------------------------------------------
+  Widget _buildAddressForm(
+    TextEditingController first,
+    TextEditingController last,
+    TextEditingController l1,
+    TextEditingController l2,
+    TextEditingController city,
+    TextEditingController st,
+    TextEditingController country,
+    TextEditingController zip,
+    TextEditingController phone,
+    VoidCallback toggleDefault,
+    bool isDefault,
+  ) {
+    final wide = MediaQuery.of(context).size.width > 700;
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.montserrat(fontSize: 13)),
-        const SizedBox(height: 6),
-        Focus(
-          child: Builder(
-            builder: (context) {
-              final focused = Focus.of(context).hasFocus;
-              return TextField(
-                controller: controller,
-                style: GoogleFonts.montserrat(),
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide(color: _black),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide(color: _black),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(6),
-                    borderSide: BorderSide(color: _gold, width: 2),
-                  ),
-                ),
-              );
-            },
-          ),
+        wide
+            ? Row(
+                children: [
+                  Expanded(child: _formInput("First Name", first)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _formInput("Last Name", last)),
+                ],
+              )
+            : Column(
+                children: [
+                  _formInput("First Name", first),
+                  const SizedBox(height: 8),
+                  _formInput("Last Name", last),
+                ],
+              ),
+
+        const SizedBox(height: 12),
+
+        _formInput("Address Line 1", l1),
+        const SizedBox(height: 8),
+        _formInput("Address Line 2 (optional)", l2),
+
+        const SizedBox(height: 12),
+
+        wide
+            ? Row(
+                children: [
+                  Expanded(child: _formInput("City", city)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _formInput("State / Region", st)),
+                ],
+              )
+            : Column(
+                children: [
+                  _formInput("City", city),
+                  const SizedBox(height: 8),
+                  _formInput("State / Region", st),
+                ],
+              ),
+
+        const SizedBox(height: 12),
+
+        wide
+            ? Row(
+                children: [
+                  Expanded(child: _countryDropdown("Country", country)),
+                  const SizedBox(width: 12),
+                  Expanded(child: _formInput("Zip / Postal Code", zip)),
+                ],
+              )
+            : Column(
+                children: [
+                  _countryDropdown("Country", country),
+                  const SizedBox(height: 8),
+                  _formInput("Zip / Postal Code", zip),
+                ],
+              ),
+
+        const SizedBox(height: 12),
+
+        _formInput("Phone Number", phone),
+
+        const SizedBox(height: 18),
+
+        Row(
+          children: [
+            Checkbox(
+              value: isDefault,
+              activeColor: _black,
+              onChanged: (_) => toggleDefault(),
+            ),
+            Text(
+              "Make this my default address",
+              style: GoogleFonts.montserrat(fontSize: 13),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  // simple country dropdown (can be expanded)
-  Widget _selectCountry({
-    required String label,
-    required TextEditingController controller,
-  }) {
-    final countries = [
-      "India",
-      "United States",
-      "United Kingdom",
-      "Select country",
-    ];
-    // try to keep current value
-    final current = controller.text.isEmpty
-        ? "Select country"
-        : controller.text;
+  /// -----------------------------------------------------------------------
+  /// UI: TEXT FIELD
+  /// -----------------------------------------------------------------------
+  Widget _formInput(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.montserrat(fontSize: 13)),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            border: Border.all(color: _black),
-            borderRadius: BorderRadius.circular(6),
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
           ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              value: countries.contains(current) ? current : "Select country",
-              items: countries
-                  .map(
-                    (c) => DropdownMenuItem<String>(
-                      value: c,
-                      child: Text(c, style: GoogleFonts.montserrat()),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) {
-                setState(() {
-                  controller.text = v ?? "";
-                });
-              },
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.all(12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: _black),
+            ),
+            focusedBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: _gold, width: 2),
             ),
           ),
         ),
@@ -433,182 +446,257 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
     );
   }
 
-  // Remove address
-  void _removeAddress(int index) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Remove address", style: GoogleFonts.montserrat()),
-        content: Text(
-          "Are you sure you want to remove this address?",
-          style: GoogleFonts.montserrat(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text("Cancel", style: GoogleFonts.montserrat()),
+  /// -----------------------------------------------------------------------
+  /// UI: COUNTRY DROPDOWN
+  /// -----------------------------------------------------------------------
+  Widget _countryDropdown(String label, TextEditingController controller) {
+    final items = [
+      "Select country",
+      "India",
+      "United States",
+      "United Kingdom",
+    ];
+    final selected = controller.text.isEmpty
+        ? "Select country"
+        : controller.text;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.montserrat(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
           ),
-          TextButton(
-            onPressed: () {
-              setState(() => _addresses.removeAt(index));
-              Navigator.of(context).pop();
-            },
-            child: Text("Remove", style: GoogleFonts.montserrat(color: _black)),
+        ),
+        const SizedBox(height: 6),
+        DropdownButtonFormField(
+          value: selected,
+          decoration: InputDecoration(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            border: OutlineInputBorder(
+              borderSide: const BorderSide(color: _black),
+              borderRadius: BorderRadius.circular(6),
+            ),
+          ),
+          items: items
+              .map(
+                (c) => DropdownMenuItem(
+                  value: c,
+                  child: Text(c, style: GoogleFonts.montserrat()),
+                ),
+              )
+              .toList(),
+          onChanged: (v) => controller.text = v!,
+        ),
+      ],
+    );
+  }
+
+  /// -----------------------------------------------------------------------
+  /// MAIN BUILD
+  /// -----------------------------------------------------------------------
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _white,
+      body: _loadingUser
+          ? const Center(child: CircularProgressIndicator(color: _black))
+          : NestedScrollView(
+              headerSliverBuilder: (_, __) => [
+                SliverToBoxAdapter(
+                  child: TopBannerTabs(active: AccountTab.addresses),
+                ),
+              ],
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: _maxWidth),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(width: 3, height: 24, color: _gold),
+                            const SizedBox(width: 12),
+                            Text(
+                              "My Addresses",
+                              style: GoogleFonts.montserrat(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                color: _black,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        ElevatedButton(
+                          onPressed: () => _openAddressDialog(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _black,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 12,
+                            ),
+                          ),
+                          child: Text(
+                            "Add New Address",
+                            style: GoogleFonts.montserrat(
+                              color: _white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        StreamBuilder<QuerySnapshot>(
+                          stream: _addressesRef()
+                              .orderBy('createdAt', descending: true)
+                              .snapshots(),
+                          builder: (context, snap) {
+                            if (!snap.hasData) {
+                              return const Center(
+                                child: CircularProgressIndicator(color: _black),
+                              );
+                            }
+
+                            if (snap.data!.docs.isEmpty) {
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: Text(
+                                  "No address added yet.",
+                                  style: GoogleFonts.montserrat(fontSize: 18),
+                                ),
+                              );
+                            }
+
+                            final list = snap.data!.docs
+                                .map((d) => AddressModel.fromDoc(d))
+                                .toList();
+
+                            return Column(
+                              children: list
+                                  .map((a) => _addressTile(a))
+                                  .toList(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
+  /// -----------------------------------------------------------------------
+  /// ADDRESS TILE UI
+  /// -----------------------------------------------------------------------
+  Widget _addressTile(AddressModel a) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        border: Border.all(color: _black.withOpacity(0.6), width: 1),
+        borderRadius: BorderRadius.circular(6),
+        color: _white,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  "${a.firstName} ${a.lastName}",
+                  style: GoogleFonts.montserrat(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: _black,
+                  ),
+                ),
+              ),
+              if (a.isDefault)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _gold.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: _gold, width: 1),
+                  ),
+                  child: Text(
+                    "DEFAULT",
+                    style: GoogleFonts.montserrat(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _gold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          Text(a.line1, style: GoogleFonts.montserrat()),
+          if (a.line2 != null && a.line2!.isNotEmpty)
+            Text(a.line2!, style: GoogleFonts.montserrat()),
+
+          Text("${a.city}, ${a.state}", style: GoogleFonts.montserrat()),
+          Text(
+            "${a.country} - ${a.postalCode}",
+            style: GoogleFonts.montserrat(),
+          ),
+          const SizedBox(height: 4),
+          Text("Phone: ${a.phone}", style: GoogleFonts.montserrat()),
+
+          const SizedBox(height: 14),
+
+          Row(
+            children: [
+              _actionButton(
+                label: "Edit",
+                onTap: () => _openAddressDialog(editing: a),
+              ),
+              const SizedBox(width: 14),
+
+              _actionButton(
+                label: "Remove",
+                onTap: () => _deleteAddressFromFirestore(a.id),
+              ),
+              const SizedBox(width: 14),
+
+              if (!a.isDefault)
+                _actionButton(
+                  label: "Make default",
+                  onTap: () => _setDefaultAddress(a.id),
+                ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  // UI for each address entry (matching screenshot)
-  Widget _addressTile(AddressModel a, int index) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "${a.firstName} ${a.lastName}".trim(),
-          style: GoogleFonts.montserrat(
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(a.line1, style: GoogleFonts.montserrat()),
-        if (a.line2 != null && a.line2!.isNotEmpty) ...[
-          const SizedBox(height: 2),
-          Text(a.line2!, style: GoogleFonts.montserrat()),
-        ],
-        const SizedBox(height: 2),
-        Text(
-          "${a.city}, ${a.state}, ${a.country} ${a.postalCode}",
-          style: GoogleFonts.montserrat(),
-        ),
-        const SizedBox(height: 6),
-        Text(a.phone, style: GoogleFonts.montserrat()),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            InkWell(
-              onTap: () => _openAddressForm(editing: a, index: index),
-              child: Text(
-                "Edit",
-                style: GoogleFonts.montserrat(
-                  decoration: TextDecoration.underline,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const SizedBox(width: 18),
-            InkWell(
-              onTap: () => _removeAddress(index),
-              child: Text(
-                "Remove",
-                style: GoogleFonts.montserrat(
-                  decoration: TextDecoration.underline,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            if (a.isDefault) ...[
-              const SizedBox(width: 18),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: _gold),
-                  color: _gold.withOpacity(0.08),
-                ),
-                child: Text(
-                  "Default",
-                  style: GoogleFonts.montserrat(fontSize: 12),
-                ),
-              ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 18),
-        Container(height: 1, color: _black.withOpacity(0.08)),
-        const SizedBox(height: 18),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final bool isWide = width > 760;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: _maxWidth),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Heading + description (match styling)
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Container(width: 3, height: 24, color: _gold),
-                  const SizedBox(width: 12),
-                  Text(
-                    "My Addresses",
-                    style: GoogleFonts.montserrat(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "Add and manage the addresses you use often.",
-                style: GoogleFonts.montserrat(fontSize: 14),
-              ),
-              const SizedBox(height: 20),
-
-              // Add new address button, aligned start
-              Row(
-                children: [
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _black,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 12,
-                      ),
-                    ),
-                    onPressed: () => _openAddressForm(),
-                    child: Text(
-                      "Add New Address",
-                      style: GoogleFonts.montserrat(
-                        color: _white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 26),
-
-              // Either empty state or list
-              if (_addresses.isEmpty) ...[
-                const SizedBox(height: 30),
-                Text(
-                  "No address added yet",
-                  style: GoogleFonts.montserrat(color: Colors.grey[700]),
-                ),
-              ] else ...[
-                // Map addresses
-                for (var i = 0; i < _addresses.length; i++)
-                  _addressTile(_addresses[i], i),
-              ],
-
-              const SizedBox(height: 80),
-            ],
-          ),
+  Widget _actionButton({required String label, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Text(
+        label,
+        style: GoogleFonts.montserrat(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: _black,
+          decoration: TextDecoration.underline,
         ),
       ),
     );
