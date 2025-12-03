@@ -1,3 +1,5 @@
+// lib/client-suite/signup.dart
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -52,26 +54,32 @@ class AuthService {
     return userCred;
   }
 
-  /// SAVE USER IN FIRESTORE (NO PHONE)
+  /// SAVE USER IN FIRESTORE (UPDATED)
   Future<void> saveUser({
     required String uid,
     required String name,
     required String email,
   }) async {
+    final fullName = name.trim();
+    final firstLetter =
+        fullName.isNotEmpty ? fullName[0].toUpperCase() : "";
+
     await _db.collection("users").doc(uid).set({
-      "name": name,
-      "email": email,
+      "name": fullName,
+      "email": email.trim(),
+      "phone": "", // default empty
+      "avatarLetter": firstLetter,
       "createdAt": FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true)); // merge ensures Google login doesn't overwrite
+      "updatedAt": FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Future<UserCredential> guest() async => await _auth.signInAnonymously();
 
-  /// GOOGLE LOGIN + SAVE TO FIRESTORE
+  /// GOOGLE LOGIN + SAVE FULL DATA
   Future<UserCredential> googlePopup() async {
     final provider = GoogleAuthProvider();
     final cred = await _auth.signInWithPopup(provider);
-
     final user = cred.user;
 
     if (user != null) {
@@ -109,7 +117,8 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
 
   void _showSnack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
   }
 
   /// CREATE ACCOUNT (EMAIL/PASSWORD)
@@ -125,7 +134,7 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
         password: _password.text.trim(),
       );
 
-      /// Save to Firestore (NO PHONE)
+      // Save all required fields to Firestore
       await AuthService.instance.saveUser(
         uid: cred.user!.uid,
         name: _name.text.trim(),
@@ -133,6 +142,12 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
       );
 
       _showSnack("Account created successfully");
+
+      // ⭐ Navigate to LOGIN page automatically
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const ClientLoginPage()),
+      );
 
     } catch (e) {
       _showSnack("Signup failed");
@@ -155,7 +170,7 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
         ),
       );
 
-  /// ---------------- LEFT FORM ----------------
+  /// LEFT FORM
   Widget _leftForm() {
     return SizedBox(
       width: leftWidth,
@@ -170,12 +185,13 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
             HoverWidget(
               builder: (_) => TextFormField(
                 controller: _name,
-                validator: (v) => v!.isEmpty ? "Enter your name" : null,
+                validator: (v) =>
+                    v!.isEmpty ? "Enter your name" : null,
                 decoration: _decor("Enter your name"),
               ),
             ),
-
             const SizedBox(height: 25),
+
             const Text("Email",
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
@@ -187,8 +203,8 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
                 decoration: _decor("Enter your email"),
               ),
             ),
-
             const SizedBox(height: 25),
+
             const Text("Password",
                 style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
@@ -205,14 +221,14 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
                             ? Icons.visibility_off
                             : Icons.visibility,
                         color: Colors.grey[600]),
-                    onPressed: () =>
-                        setState(() => _showPassword = !_showPassword),
+                    onPressed: () => setState(
+                        () => _showPassword = !_showPassword),
                   ),
                 ),
               ),
             ),
-
             const SizedBox(height: 25),
+
             HoverWidget(
               builder: (hover) => AnimatedOpacity(
                 opacity: hover ? 0.85 : 1,
@@ -230,7 +246,8 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
                             color: Colors.white, strokeWidth: 2)
                         : const Text("Create Account",
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w600)),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600)),
                   ),
                 ),
               ),
@@ -248,7 +265,8 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
                 child: RichText(
                   text: TextSpan(
                     text: "Already have an account? ",
-                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                    style:
+                        TextStyle(color: Colors.grey[700], fontSize: 13),
                     children: const [
                       TextSpan(
                         text: "Login",
@@ -268,7 +286,7 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
     );
   }
 
-  /// ---------------- RIGHT PANEL ----------------
+  /// RIGHT PANEL
   Widget _rightPanelContent() {
     return SizedBox(
       width: rightWidth,
@@ -292,7 +310,6 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
               }
             },
           ),
-
           const SizedBox(height: 16),
 
           _socialButton(
@@ -352,33 +369,36 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
   /// ---------------- MAIN UI ----------------
   @override
   Widget build(BuildContext context) {
+    final isMobile =
+        MediaQuery.of(context).size.width < 700;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, c) {
-            final isMobile = c.maxWidth < 700;
-            final width =
-                c.maxWidth >= desktopWidth ? desktopWidth : c.maxWidth - 24;
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: LayoutBuilder(
+              builder: (context, c) {
+                final width = c.maxWidth >= desktopWidth
+                    ? desktopWidth
+                    : c.maxWidth - 24;
 
-            return Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: Stack(
+                return Stack(
                   children: [
                     Container(
                       width: width,
-                      padding: const EdgeInsets.fromLTRB(60, 80, 60, 60),
+                      padding:
+                          const EdgeInsets.fromLTRB(60, 80, 60, 60),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: const [
                           BoxShadow(
                               color: Color.fromRGBO(0, 0, 0, 0.45),
-                              blurRadius: 50),
+                              blurRadius: 50)
                         ],
                       ),
-
                       child: isMobile
                           ? Column(
                               children: [
@@ -386,18 +406,19 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
                                 const SizedBox(height: 20),
                                 const SizedBox(
                                     width: 120,
-                                    child: Divider(color: Colors.black26)),
+                                    child:
+                                        Divider(color: Colors.black26)),
                                 const SizedBox(height: 20),
                                 _rightPanelContent(),
                               ],
                             )
                           : IntrinsicHeight(
                               child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                 children: [
                                   _leftForm(),
                                   const SizedBox(width: 50),
-
                                   Column(
                                     children: [
                                       const SizedBox(height: 70),
@@ -405,13 +426,11 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
                                         width: 2,
                                         height: 220,
                                         color: Colors.black
-                                            .withValues(alpha: 0.75),
+                                            .withOpacity(0.75),
                                       ),
                                     ],
                                   ),
-
                                   const SizedBox(width: 40),
-
                                   Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -441,10 +460,10 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
                       ),
                     ),
                   ],
-                ),
-              ),
-            );
-          },
+                );
+              },
+            ),
+          ),
         ),
       ),
     );
