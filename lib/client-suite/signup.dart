@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login.dart';
 
 /// ---------------- Hover ----------------
@@ -32,24 +33,56 @@ class _HoverWidgetState extends State<HoverWidget> {
 class AuthService {
   AuthService._();
   static final instance = AuthService._();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  /// EMAIL SIGNUP
   Future<UserCredential> signUpEmail({
     required String name,
     required String email,
     required String password,
   }) async {
-    final user = await _auth.createUserWithEmailAndPassword(
-        email: email.trim(), password: password.trim());
-    await user.user?.updateDisplayName(name.trim());
-    return user;
+    final userCred = await _auth.createUserWithEmailAndPassword(
+      email: email.trim(),
+      password: password.trim(),
+    );
+
+    await userCred.user?.updateDisplayName(name.trim());
+    return userCred;
+  }
+
+  /// SAVE USER IN FIRESTORE (NO PHONE)
+  Future<void> saveUser({
+    required String uid,
+    required String name,
+    required String email,
+  }) async {
+    await _db.collection("users").doc(uid).set({
+      "name": name,
+      "email": email,
+      "createdAt": FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true)); // merge ensures Google login doesn't overwrite
   }
 
   Future<UserCredential> guest() async => await _auth.signInAnonymously();
 
+  /// GOOGLE LOGIN + SAVE TO FIRESTORE
   Future<UserCredential> googlePopup() async {
     final provider = GoogleAuthProvider();
-    return await _auth.signInWithPopup(provider);
+    final cred = await _auth.signInWithPopup(provider);
+
+    final user = cred.user;
+
+    if (user != null) {
+      await saveUser(
+        uid: user.uid,
+        name: user.displayName ?? "",
+        email: user.email ?? "",
+      );
+    }
+
+    return cred;
   }
 }
 
@@ -79,19 +112,29 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  /// CREATE ACCOUNT (EMAIL/PASSWORD)
   Future<void> _createAccount() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _loading = true);
 
     try {
-      await AuthService.instance.signUpEmail(
+      final cred = await AuthService.instance.signUpEmail(
         name: _name.text.trim(),
         email: _email.text.trim(),
         password: _password.text.trim(),
       );
-      _showSnack("Account created");
-    } catch (_) {
+
+      /// Save to Firestore (NO PHONE)
+      await AuthService.instance.saveUser(
+        uid: cred.user!.uid,
+        name: _name.text.trim(),
+        email: _email.text.trim(),
+      );
+
+      _showSnack("Account created successfully");
+
+    } catch (e) {
       _showSnack("Signup failed");
     }
 
@@ -197,8 +240,10 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
             Center(
               child: GestureDetector(
                 onTap: () {
-                  Navigator.pushReplacement(context,
-                      MaterialPageRoute(builder: (_) => const ClientLoginPage()));
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) => const ClientLoginPage()));
                 },
                 child: RichText(
                   text: TextSpan(
@@ -206,10 +251,12 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
                     style: TextStyle(color: Colors.grey[700], fontSize: 13),
                     children: const [
                       TextSpan(
-                          text: "Login",
-                          style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w700)),
+                        text: "Login",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -221,7 +268,7 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
     );
   }
 
-  /// ---------------- RIGHT PANEL CONTENT (FIXED ALIGNMENT) ----------------
+  /// ---------------- RIGHT PANEL ----------------
   Widget _rightPanelContent() {
     return SizedBox(
       width: rightWidth,
@@ -280,8 +327,7 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
               onPressed: onTap,
               style: OutlinedButton.styleFrom(
                   backgroundColor: bg,
-                  side:
-                      const BorderSide(color: Colors.black, width: 1.6),
+                  side: const BorderSide(color: Colors.black, width: 1.6),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(6))),
               child: Row(
@@ -322,8 +368,7 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
                   children: [
                     Container(
                       width: width,
-                      padding:
-                          const EdgeInsets.fromLTRB(60, 80, 60, 60),
+                      padding: const EdgeInsets.fromLTRB(60, 80, 60, 60),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
@@ -380,17 +425,19 @@ class _ClientSignupPageState extends State<ClientSignupPage> {
                             ),
                     ),
 
-                    /// TITLE
                     Positioned(
                       top: 25,
                       left: 0,
                       right: 0,
                       child: Center(
-                        child: Text("SIGN UP",
-                            style: GoogleFonts.montserrat(
-                                fontSize: 34,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 1.4)),
+                        child: Text(
+                          "SIGN UP",
+                          style: GoogleFonts.montserrat(
+                            fontSize: 34,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.4,
+                          ),
+                        ),
                       ),
                     ),
                   ],
