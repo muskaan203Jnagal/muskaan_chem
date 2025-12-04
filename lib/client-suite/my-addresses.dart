@@ -234,6 +234,8 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
                       ),
                     ),
                     onPressed: () async {
+                      if (!mounted) return;
+
                       await _saveAddress(
                         editing,
                         first,
@@ -247,8 +249,10 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
                         phone,
                         isDefault,
                       );
-                      Navigator.pop(context);
+
+                      if (mounted) Navigator.pop(context);
                     },
+
                     child: Text(
                       "Save Address",
                       style: GoogleFonts.montserrat(color: _white),
@@ -455,6 +459,22 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
       "India",
       "United States",
       "United Kingdom",
+      "Canada",
+      "Australia",
+      "Germany",
+      "France",
+      "Italy",
+      "Spain",
+      "Netherlands",
+      "Switzerland",
+      "United Arab Emirates",
+      "Saudi Arabia",
+      "Singapore",
+      "Malaysia",
+      "New Zealand",
+      "South Africa",
+      "Japan",
+      "China",
     ];
     final selected = controller.text.isEmpty
         ? "Select country"
@@ -488,7 +508,11 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
                 ),
               )
               .toList(),
-          onChanged: (v) => controller.text = v!,
+          onChanged: (v) {
+            if (v != null && v != "Select country") {
+              controller.text = v;
+            }
+          },
         ),
       ],
     );
