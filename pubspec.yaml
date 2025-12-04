@@ -1,6 +1,7 @@
 name: chem_revolutions
 description: "A new Flutter project."
 publish_to: 'none'
+
 version: 0.1.0
 
 environment:
@@ -9,8 +10,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  firebase_core: ^4.2.1
-  firebase_auth: ^6.1.2
+
+  # Firebase compatible set
+  firebase_core: ^2.32.0
+  cloud_firestore: ^4.17.3
+  firebase_auth: ^4.17.3
+
+  google_fonts: ^6.0.0
 
 dev_dependencies:
   flutter_test:
