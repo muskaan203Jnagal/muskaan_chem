@@ -144,7 +144,7 @@ class TopBannerTabs extends StatelessWidget {
             ),
 
             // -----------------------------------------------------------
-            // RESPONSIVE TABS: MOBILE (stacked), TABLET (2x2), DESKTOP (row)
+            // TABS AREA
             // -----------------------------------------------------------
             Container(
               color: _white,
@@ -170,57 +170,42 @@ class TopBannerTabs extends StatelessWidget {
   Widget _buildResponsiveTabs(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
 
+    // -----------------------------
+    // MOBILE (HORIZONTAL IN ONE ROW)
+    // -----------------------------
     if (width < 500) {
-      // -----------------
-      // MOBILE (stacked)
-      // -----------------
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _tabItem(context, "Orders", AccountTab.orders, mobile: true),
-          const SizedBox(height: 6),
-          _tabItem(context, "Addresses", AccountTab.addresses, mobile: true),
-          const SizedBox(height: 6),
-          _tabItem(context, "Wishlist", AccountTab.wishlist, mobile: true),
-          const SizedBox(height: 6),
-          _tabItem(context, "Account", AccountTab.settings, mobile: true),
+          _mobileTab(context, "My Orders", AccountTab.orders),
+          _mobileTab(context, "My Addresses", AccountTab.addresses),
+          _mobileTab(context, "My Wishlist", AccountTab.wishlist),
+          _mobileTab(context, "Account Settings", AccountTab.settings),
         ],
       );
     }
 
+    // -----------------------------
+    // TABLET (same as DESKTOP)
+    // -----------------------------
     if (width < 700) {
-      // -----------------
-      // TABLET (2×2 grid)
-      // -----------------
-      return Column(
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _tabItem(context, "Orders", AccountTab.orders, mobile: true),
-              _tabItem(
-                context,
-                "Addresses",
-                AccountTab.addresses,
-                mobile: true,
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _tabItem(context, "Wishlist", AccountTab.wishlist, mobile: true),
-              _tabItem(context, "Account", AccountTab.settings, mobile: true),
-            ],
-          ),
+          _tabItem(context, "My Orders", AccountTab.orders),
+          const SizedBox(width: 28),
+          _tabItem(context, "My Addresses", AccountTab.addresses),
+          const SizedBox(width: 28),
+          _tabItem(context, "My Wishlist", AccountTab.wishlist),
+          const SizedBox(width: 28),
+          _tabItem(context, "Account Settings", AccountTab.settings),
         ],
       );
     }
 
-    // -----------------
-    // DESKTOP (original UI)
-    // -----------------
+    // -----------------------------
+    // DESKTOP
+    // -----------------------------
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -236,7 +221,70 @@ class TopBannerTabs extends StatelessWidget {
   }
 
   // ----------------------------------------------------------------------
-  // TAB WIDGET
+  // MOBILE TAB BOX (compact, horizontal, 2-line text)
+  // ----------------------------------------------------------------------
+  Widget _mobileTab(BuildContext context, String label, AccountTab tab) {
+    final bool isActive = (tab == active);
+
+    // Split into two lines at the first space
+    List<String> parts = label.split(" ");
+    String line1 = parts.length > 0 ? parts[0] : label;
+    String line2 = parts.length > 1 ? parts.sublist(1).join(" ") : "";
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => _go(context, tab),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Column(
+                children: [
+                  Text(
+                    line1,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.montserrat(
+                      fontSize: 12,
+                      height: 1.5,
+                      color: _black,
+                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                  if (line2.isNotEmpty)
+                    Text(
+                      line2,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.montserrat(
+                        fontSize: 12,
+                        height: 1.0,
+                        color: _black,
+                        fontWeight: isActive
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // underline
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              height: 3,
+              width: 28,
+              decoration: BoxDecoration(
+                color: isActive ? _gold : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ----------------------------------------------------------------------
+  // DESKTOP / TABLET TAB
   // ----------------------------------------------------------------------
   Widget _tabItem(
     BuildContext context,
@@ -245,9 +293,6 @@ class TopBannerTabs extends StatelessWidget {
     bool mobile = false,
   }) {
     final bool isActive = (tab == active);
-
-    final double fontSize = mobile ? 14 : 14.0;
-    final double underlineWidth = mobile ? 45 : 60;
 
     return InkWell(
       onTap: () => _go(context, tab),
@@ -258,7 +303,7 @@ class TopBannerTabs extends StatelessWidget {
             child: Text(
               label,
               style: GoogleFonts.montserrat(
-                fontSize: fontSize,
+                fontSize: 14,
                 color: _black,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               ),
@@ -267,7 +312,7 @@ class TopBannerTabs extends StatelessWidget {
           AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             height: 3,
-            width: underlineWidth,
+            width: 60,
             decoration: BoxDecoration(
               color: isActive ? _gold : Colors.transparent,
               borderRadius: BorderRadius.circular(2),

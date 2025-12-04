@@ -1,5 +1,7 @@
 // lib/client-suite/my_account_dashboard.dart
 
+import 'package:chem_revolutions/client-suite/my-orders.dart';
+import 'package:chem_revolutions/client-suite/my-wishlist.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -149,12 +151,23 @@ class MyAccountDashboard extends StatelessWidget {
                                 children: [
                                   SizedBox(
                                     width: cardWidth,
-                                    child: DashboardActionCard(
-                                      title: 'My Orders',
-                                      subtitle:
-                                          'View your past orders & details',
-                                      gold: _gold,
-                                      radius: _radius,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const MyOrdersPage(),
+                                          ),
+                                        );
+                                      },
+                                      child: DashboardActionCard(
+                                        title: 'My Orders',
+                                        subtitle:
+                                            'View your past orders & details',
+                                        gold: _gold,
+                                        radius: _radius,
+                                      ),
                                     ),
                                   ),
                                   SizedBox(
@@ -180,11 +193,23 @@ class MyAccountDashboard extends StatelessWidget {
                                   ),
                                   SizedBox(
                                     width: cardWidth,
-                                    child: DashboardActionCard(
-                                      title: 'My Wishlist',
-                                      subtitle: 'Your saved favourite products',
-                                      gold: _gold,
-                                      radius: _radius,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) =>
+                                                const MyWishlistPage(),
+                                          ),
+                                        );
+                                      },
+                                      child: DashboardActionCard(
+                                        title: 'My Wishlist',
+                                        subtitle:
+                                            'Your saved favourite products',
+                                        gold: _gold,
+                                        radius: _radius,
+                                      ),
                                     ),
                                   ),
                                   SizedBox(
@@ -200,7 +225,7 @@ class MyAccountDashboard extends StatelessWidget {
                                         );
                                       },
                                       child: DashboardActionCard(
-                                        title: 'My Account',
+                                        title: 'Account Settings',
                                         subtitle:
                                             'Edit your personal details & password',
                                         gold: _gold,
