@@ -10,13 +10,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-  # Firebase compatible set
-  firebase_core: ^2.32.0
-  cloud_firestore: ^4.17.3
-  firebase_auth: ^4.17.3
-
-  google_fonts: ^6.0.0
+  firebase_core: ^4.2.1
+  firebase_auth: ^6.1.2
+  google_fonts: ^6.3.3
+  google_sign_in: ^7.2.0
+  cloud_firestore: ^6.1.0
+  image_picker: ^1.2.1
+  firebase_storage: ^13.0.4
+  intl: ^0.20.2
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -25,3 +27,5 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+  - assets/icons/google_logo.png
