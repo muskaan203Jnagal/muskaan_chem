@@ -1,69 +1,63 @@
-// lib/homepage/homepage.dart (CORRECTED)
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:google_fonts/google_fonts.dart';
+// 💡 FIX: Import the shared Product model
+import 'package:chem_revolutions/models/product.dart'; 
+// 💡 NEW: Import the detailed product page
+import 'package:chem_revolutions/product_page/product_page.dart'; 
+// NOTE: You may need to change 'package:chem_revolutions' to your project's name.
 
-// 1. FIX: Use a prefix for one import to resolve the ambiguous name conflict
-import '../models/product.dart' as model; // Importing the model Product with a prefix
-import '../product_page/product_page.dart'; // This file also defines a Product class/widget
+// 1. Product Model class REMOVED from this file
 
+// 2. HomePage Widget
 class HomePage extends StatelessWidget {
-  // FIX 2: Remove 'const' from the constructor because of the non-constant field below
-  HomePage({super.key});
-
-  // Firestore references cannot be constant, so 'final' is correct.
-  final CollectionReference productsCollection = 
-      FirebaseFirestore.instance.collection('products');
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Reference the 'products' collection. Update this string if your collection name is different.
+    final productsCollection = FirebaseFirestore.instance.collection('products');
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: Text(
-          '🔥 Supplement Shop', 
-          style: GoogleFonts.montserrat(fontWeight: FontWeight.w800),
-        ),
+        title: const Text('Product Catalog'),
+        elevation: 0,
         backgroundColor: Colors.white,
-        centerTitle: false,
-        elevation: 1,
+        foregroundColor: Colors.black,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        // FIX 3: Removed the 'const' keyword causing 'const_eval_method_invocation'
-        stream: productsCollection.where('status', isEqualTo: 'active').snapshots(),
+        // Listen to real-time changes in the 'products' collection
+        stream: productsCollection.snapshots(),
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error loading products: ${snapshot.error}'));
+          }
+
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error fetching products: ${snapshot.error}'));
-          }
-
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('No active products found.'));
+            return const Center(child: Text('No products found.'));
           }
 
-          final products = snapshot.data!.docs.map((doc) {
-            // FIX 1: Use the prefixed Product model: model.Product
-            return model.Product.fromFirestore(doc);
-          }).toList();
+          // Convert DocumentSnapshots into a list of Product objects
+          // This now uses the shared Product.fromFirestore constructor
+          final products = snapshot.data!.docs.map((doc) => Product.fromFirestore(doc)).toList();
 
-          return Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: GridView.builder(
-              itemCount: products.length,
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                childAspectRatio: 0.65,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemBuilder: (context, index) {
-                final product = products[index];
-                return _ProductGridItem(product: product);
-              },
+          // Display products in a modern, responsive grid view
+          return GridView.builder(
+            padding: const EdgeInsets.all(16.0),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 300, // Max width per card
+              childAspectRatio: 0.7, // Card height relative to width
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
             ),
+            itemCount: products.length,
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return ProductCard(product: product);
+            },
           );
         },
       ),
@@ -71,62 +65,61 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// Product card with improved design and navigation
-class _ProductGridItem extends StatelessWidget {
-  // FIX 1: Use the prefixed Product model: model.Product
-  final model.Product product; 
-  // Removed 'const' because it holds a non-const field ('product')
-  const _ProductGridItem({required this.product});
+// 3. Product Card Widget (Modern Design)
+class ProductCard extends StatelessWidget {
+  final Product product;
+  
+  const ProductCard({
+    super.key,
+    required this.product,
+  });
+
+  // Wrap the card in an InkWell for tap functionality
+  void _navigateToProductPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        // The Product object passed here is now the correct shared type
+        builder: (context) => ProductPage(product: product), 
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProductPage(productId: product.id),
-            // FIX 4: The error was in the line above. 
-            // The parameter name 'productId' is correct, but the error indicates 
-            // that the ProductPage class in your environment didn't have a 
-            // required named parameter 'productId' in its constructor.
-            // Assuming your ProductPage now looks like:
-            // class ProductPage extends StatefulWidget {
-            //   final String productId;
-            //   const ProductPage({super.key, required this.productId}); 
-            //   ...
-            // }
-          ),
-        );
-      },
-      borderRadius: BorderRadius.circular(16),
+    // 💡 CORS FIX: Apply CORS proxy to the image URL for loading in Flutter Web.
+    final proxiedUrl = 'https://wsrv.nl/?url=${Uri.encodeComponent(product.mainImageUrl)}'; 
+
+    return InkWell( // Wrap the whole card in InkWell
+      onTap: () => _navigateToProductPage(context), // Handle the tap to navigate
+      borderRadius: BorderRadius.circular(12), // Match the container's border radius
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withOpacity(0.15),
               spreadRadius: 2,
-              blurRadius: 5,
-              offset: const Offset(0, 3), 
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            // Product Image
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image Section
             Expanded(
-              flex: 4,
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                 child: Image.network(
-                  product.mainImageUrl,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
+                  proxiedUrl, 
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  // Show a loading indicator while fetching the image
+                  loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
                     if (loadingProgress == null) return child;
-                    
                     return Center(
                       child: CircularProgressIndicator(
                         value: loadingProgress.expectedTotalBytes != null
@@ -135,80 +128,79 @@ class _ProductGridItem extends StatelessWidget {
                       ),
                     );
                   },
+                  // Show a fallback error message if loading fails
                   errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                    return Container(
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                            SizedBox(height: 8),
+                            Text('Image Unavailable', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                          ],
+                        ),
+                      ),
                     );
                   },
                 ),
               ),
             ),
             
-            // Product Info
-            Expanded(
-              flex: 3,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    Text(
-                      product.name,
-                      style: GoogleFonts.montserrat(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            // Details Section
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      product.description,
-                      style: GoogleFonts.montserrat(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '\$${product.price.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
                     ),
-                    const Spacer(),
-                    Text(
-                      '\$${product.price.toStringAsFixed(2)}',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.redAccent, 
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Add to Cart Button (UI only)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 38,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Added ${product.name} to cart!'),
-                              duration: const Duration(milliseconds: 800),
-                            ),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  // Add to Cart Button (UI Only)
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        // UI only action as requested
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${product.name} added to cart! (UI only action)'),
+                            duration: const Duration(seconds: 1),
                           ),
+                        );
+                      },
+                      icon: const Icon(Icons.shopping_cart_outlined, size: 18),
+                      label: const Text('Add to Cart'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueAccent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          'Add to Cart',
-                          style: GoogleFonts.montserrat(fontSize: 13, fontWeight: FontWeight.w600),
-                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        elevation: 3,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],

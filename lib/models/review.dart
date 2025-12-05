@@ -1,54 +1,50 @@
 // lib/models/review.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class Review {
   final String id;
-  final String name; 
-  final String comment;
-  final num rating;
-  final String date;
-  
-  // Fields for design compatibility
-  final String initials;
-  final String title;
-  final String country;
-  final String productId;
+  final String name;       // Comes from Firestore 'proxyName'
+  final String title;      // (Placeholder for now)
+  final String country;    // (Placeholder for now)
+  final double rating;     // Comes from Firestore 'rating'
+  final String text;       // Comes from Firestore 'comment'
+  final Timestamp createdAt; 
+
+  // Calculated fields for the UI
+  String get initials => name.isNotEmpty 
+      ? name.trim().split(' ').map((l) => l.isNotEmpty ? l[0] : '').join().toUpperCase()
+      : '??';
+
+  String get date {
+    // Format the date to match the 'MM/DD/YYYY' style in the design
+    return DateFormat('MM/dd/yyyy').format(createdAt.toDate());
+  }
 
   Review({
     required this.id,
     required this.name,
-    required this.comment,
-    required this.rating,
-    required this.date,
-    required this.initials,
     required this.title,
     required this.country,
-    required this.productId,
+    required this.rating,
+    required this.text,
+    required this.createdAt,
   });
 
   factory Review.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>?;
-    if (data == null) {
-      throw Exception("Review data is null for ID: ${doc.id}");
-    }
 
-    final timestamp = data['createdAt'] as String? ?? '';
-    final date = timestamp.split(' ')[0]; // Basic date extraction
-
-    final proxyName = data['proxyName'] as String? ?? 'Anonymous';
-    
     return Review(
       id: doc.id,
-      name: proxyName,
-      comment: data['comment'] as String? ?? 'No comment.',
-      rating: data['rating'] as num? ?? 5,
-      date: date,
+      name: data?['proxyName'] ?? 'Anonymous',
+      text: data?['comment'] ?? 'No comment provided.',
+      rating: (data?['rating'] is num) ? (data!['rating'] as num).toDouble() : 0.0,
       
-      // Static/derived fields for design compatibility
-      initials: proxyName.substring(0, 1).toUpperCase(),
-      title: 'A Verified Purchase', 
-      country: 'United States', // Static placeholder
-      productId: data['productID'] as String? ?? '',
+      // Placeholders for fields not currently in your schema
+      title: 'Verified Purchase', 
+      country: 'United States',
+      
+      createdAt: data?['createdAt'] ?? Timestamp.now(), 
     );
   }
 }
