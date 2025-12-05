@@ -1,11 +1,13 @@
 // lib/client-suite/login.dart
 
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'signup.dart';
-import 'my-account-dashboard.dart';
+import '../homepage/homepage.dart';
 
 /// HOVER WIDGET
 class HoverWidget extends StatefulWidget {
@@ -88,9 +90,8 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
       // ⭐ REDIRECT TO DASHBOARD
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const MyAccountDashboard()),
+        MaterialPageRoute(builder: (_) => HomePage()),
       );
-
     } catch (e) {
       _sn("Login failed");
     }
@@ -99,126 +100,129 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
   }
 
   InputDecoration deco(String hint) => InputDecoration(
-        hintText: hint,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: Colors.black, width: 1.6),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(6),
-          borderSide: const BorderSide(color: Colors.black, width: 1.6),
-        ),
-      );
+    hintText: hint,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 15, vertical: 15),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(6),
+      borderSide: const BorderSide(color: Colors.black, width: 1.6),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(6),
+      borderSide: const BorderSide(color: Colors.black, width: 1.6),
+    ),
+  );
 
   /// LEFT PANEL
   Widget leftPanel() => SizedBox(
-        width: LW,
-        child: Form(
-          key: _form,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text("Email",
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-
-              HoverWidget(
-                builder: (_) => TextFormField(
-                  controller: _email,
-                  validator: (v) =>
-                      v!.contains("@") ? null : "Enter valid email",
-                  decoration: deco("Enter your email"),
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              const Text("Password",
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-
-              HoverWidget(
-                builder: (_) => TextFormField(
-                  controller: _password,
-                  obscureText: !show,
-                  validator: (v) => v!.isEmpty ? "Enter password" : null,
-                  decoration: deco("Enter your password").copyWith(
-                    suffixIcon: IconButton(
-                      icon: Icon(show
-                          ? Icons.visibility_off
-                          : Icons.visibility),
-                      onPressed: () => setState(() => show = !show),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              HoverWidget(
-                builder: (hover) => AnimatedOpacity(
-                  duration: const Duration(milliseconds: 150),
-                  opacity: hover ? 0.85 : 1,
-                  child: SizedBox(
-                    height: 50,
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: loading ? null : login,
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          foregroundColor: Colors.white),
-                      child: loading
-                          ? const CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2)
-                          : const Text("Login",
-                              style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              Center(
-                child: HoverWidget(
-                  builder: (hover) => GestureDetector(
-                    onTap: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const ClientSignupPage()),
-                      );
-                    },
-                    child: RichText(
-                      text: TextSpan(
-                        text: "Don’t have an account? ",
-                        style: TextStyle(
-                            color: Colors.grey[700], fontSize: 13),
-                        children: [
-                          TextSpan(
-                            text: "Sign Up",
-                            style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.w700,
-                              decoration: hover
-                                  ? TextDecoration.underline
-                                  : TextDecoration.none,
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            ],
+    width: LW,
+    child: Form(
+      key: _form,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Email",
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
           ),
-        ),
-      );
+          const SizedBox(height: 8),
+
+          HoverWidget(
+            builder: (_) => BlueSelectionTextField(
+              controller: _email,
+              validator: (v) => v!.contains("@") ? null : "Enter valid email",
+              decoration: deco("Enter your email"),
+            ),
+          ),
+
+          const SizedBox(height: 25),
+
+          const Text(
+            "Password",
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+
+          HoverWidget(
+            builder: (_) => BlueSelectionTextField(
+              controller: _password,
+              validator: (v) => v!.isEmpty ? "Enter password" : null,
+              obscureText: !show,
+              decoration: deco("Enter your password"),
+              suffixIcon: IconButton(
+                icon: Icon(show ? Icons.visibility_off : Icons.visibility),
+                onPressed: () => setState(() => show = !show),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 25),
+
+          HoverWidget(
+            builder: (hover) => AnimatedOpacity(
+              duration: const Duration(milliseconds: 150),
+              opacity: hover ? 0.85 : 1,
+              child: SizedBox(
+                height: 50,
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: loading ? null : login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: loading
+                      ? const CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        )
+                      : const Text(
+                          "Login",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Center(
+            child: HoverWidget(
+              builder: (hover) => GestureDetector(
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ClientSignupPage()),
+                  );
+                },
+                child: RichText(
+                  text: TextSpan(
+                    text: "Don’t have an account? ",
+                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                    children: [
+                      TextSpan(
+                        text: "Sign Up",
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.w700,
+                          decoration: hover
+                              ? TextDecoration.underline
+                              : TextDecoration.none,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
   /// SOCIAL BUTTON
   Widget socialBtn({
@@ -242,18 +246,29 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
                 backgroundColor: bg,
                 side: const BorderSide(color: Colors.black, width: 1.6),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6)),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                overlayColor: Colors.black.withOpacity(0.08),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  icon,
+                  // 🔥 ICON COLOR CHANGES ON HOVER
+                  IconTheme(
+                    data: IconThemeData(color: fg),
+                    child: icon,
+                  ),
+
                   const SizedBox(width: 12),
-                  Text(text,
-                      style: TextStyle(
-                          color: fg,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600)),
+
+                  Text(
+                    text,
+                    style: TextStyle(
+                      color: fg,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -265,61 +280,63 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
 
   /// RIGHT PANEL
   Widget rightPanel() => Padding(
-        padding: const EdgeInsets.only(top: 60),
-        child: SizedBox(
-          width: RW,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Continue With",
-                  style: GoogleFonts.montserrat(
-                      fontSize: 20, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 25),
-
-              // GOOGLE BUTTON
-              socialBtn(
-                icon: Image.asset("assets/icons/google_logo.png", height: 22),
-                text: "Google",
-                onTap: () async {
-                  try {
-                    final r = await AuthService.instance.googleWebPopup();
-                    _sn("Logged in as ${r.user?.email}");
-
-                    // ⭐ REDIRECT
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const MyAccountDashboard()),
-                    );
-
-                  } catch (_) {
-                    _sn("Google sign-in failed");
-                  }
-                },
-              ),
-
-              const SizedBox(height: 16),
-
-              // GUEST LOGIN
-              socialBtn(
-                icon: const Icon(Icons.person_outline),
-                text: "Guest Mode",
-                onTap: () async {
-                  await AuthService.instance.guestLogin();
-                  _sn("Logged in as Guest");
-
-                  // ⭐ REDIRECT
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const MyAccountDashboard()),
-                  );
-                },
-              ),
-            ],
+    padding: const EdgeInsets.only(top: 60),
+    child: SizedBox(
+      width: RW,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Continue With",
+            style: GoogleFonts.montserrat(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-      );
+          const SizedBox(height: 25),
+
+          // GOOGLE BUTTON
+          socialBtn(
+            icon: Image.asset("assets/icons/google_logo.png", height: 22),
+            text: "Google",
+            onTap: () async {
+              try {
+                final r = await AuthService.instance.googleWebPopup();
+                _sn("Logged in as ${r.user?.email}");
+
+                // ⭐ REDIRECT
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => HomePage()),
+                );
+              } catch (_) {
+                _sn("Google sign-in failed");
+              }
+            },
+          ),
+
+          const SizedBox(height: 16),
+
+          // GUEST LOGIN
+          socialBtn(
+            icon: const Icon(Icons.person_outline, size: 22),
+
+            text: "Guest Mode",
+            onTap: () async {
+              await AuthService.instance.guestLogin();
+              _sn("Logged in as Guest");
+
+              // ⭐ REDIRECT
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => HomePage()),
+              );
+            },
+          ),
+        ],
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -344,8 +361,9 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: const [
                           BoxShadow(
-                              color: Color.fromRGBO(0, 0, 0, 0.45),
-                              blurRadius: 50)
+                            color: Color.fromRGBO(0, 0, 0, 0.45),
+                            blurRadius: 50,
+                          ),
                         ],
                       ),
 
@@ -355,8 +373,9 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
                                 leftPanel(),
                                 const SizedBox(height: 20),
                                 const SizedBox(
-                                    width: 120,
-                                    child: Divider(color: Colors.black26)),
+                                  width: 120,
+                                  child: Divider(color: Colors.black26),
+                                ),
                                 const SizedBox(height: 20),
                                 rightPanel(),
                               ],
@@ -387,18 +406,56 @@ class _ClientLoginPageState extends State<ClientLoginPage> {
                         child: Text(
                           "LOGIN",
                           style: GoogleFonts.montserrat(
-                              fontSize: 34,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1.3),
+                            fontSize: 34,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.3,
+                          ),
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class BlueSelectionTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String? Function(String?)? validator;
+  final InputDecoration decoration;
+  final bool obscureText;
+  final Widget? suffixIcon;
+
+  const BlueSelectionTextField({
+    super.key,
+    required this.controller,
+    required this.decoration,
+    this.validator,
+    this.obscureText = false,
+    this.suffixIcon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: Colors.black, // black cursor
+          selectionColor: Color(0xFF90CAF9), // blue highlight
+          selectionHandleColor: Colors.blue, // blue handles
+        ),
+      ),
+      child: TextFormField(
+        controller: controller,
+        cursorColor: Colors.black,
+        validator: validator,
+        obscureText: obscureText,
+        decoration: decoration.copyWith(suffixIcon: suffixIcon),
       ),
     );
   }
