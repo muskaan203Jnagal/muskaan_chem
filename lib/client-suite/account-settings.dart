@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// NEW — common top banner
+// NEW — common top banner (you said this file already exists)
 import 'widgets/top_banner_tabs.dart';
 
 /// ACCOUNT SETTINGS — Loads once in initState()
@@ -42,6 +42,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
 
   bool _loading = true;
   bool _saving = false;
+
+  bool _hasPasswordProvider = false; // detect if 'password' provider available
 
   @override
   void initState() {
@@ -84,6 +86,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
 
   // ---------------- Load user once ----------------
   Future<void> _loadUserOnce() async {
+    if (!mounted) return;
     setState(() => _loading = true);
 
     try {
@@ -95,13 +98,19 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
         _lastName.text = "";
         _phone.text = "";
         avatarLetter = "";
-        setState(() => _loading = false);
+        _hasPasswordProvider = false;
+        if (mounted) setState(() => _loading = false);
         return;
       }
 
+      // refresh
       await user.reload();
       final reloaded = _auth.currentUser!;
       _uid = reloaded.uid;
+
+      // provider detection
+      _hasPasswordProvider = reloaded.providerData
+          .any((p) => p.providerId == 'password');
 
       final docRef = _db.collection('users').doc(_uid);
       final snap = await docRef.get();
@@ -135,20 +144,22 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
       _email.text = email;
       avatarLetter = letter.isNotEmpty ? letter : avatarLetter;
 
-      setState(() => _loading = false);
+      if (mounted) setState(() {
+        _loading = false;
+      });
     } catch (e) {
-      setState(() => _loading = false);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text("Failed to load user data: $e")));
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to load user data: $e")),
+        );
       }
     }
   }
 
   // ---------------- Update info ----------------
   Future<void> _updateInfo() async {
-    if (_uid.isEmpty) return;
+    if (_uid.isEmpty || !mounted) return;
 
     final fullName = "${_firstName.text.trim()} ${_lastName.text.trim()}"
         .trim();
@@ -169,204 +180,488 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
         if (user != null) await user.updateDisplayName(fullName);
       } catch (_) {}
 
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Updated Successfully")));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Updated Successfully")),
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Update failed")));
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Update failed")),
+      );
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (!mounted) return;
+      setState(() => _saving = false);
     }
   }
 
-  // ---------------- CHANGE EMAIL DIALOG ----------------
+  // ---------------- UTILS: styled dialog widgets ----------------
+  Dialog _styledDialog({
+    required Widget title,
+    required Widget content,
+    required List<Widget> actions,
+    double? width,
+  }) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: _gold, width: 2),
+      ),
+      child: Container(
+        constraints: BoxConstraints(maxWidth: width ?? 520),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: _white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Title area (black header + gold underline)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: _black,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(child: title),
+            ),
+            const SizedBox(height: 14),
+            content,
+            const SizedBox(height: 18),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: actions,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _popupInputDec({String? hint}) {
+    return InputDecoration(
+      hintText: hint,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: _black),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(6),
+        borderSide: const BorderSide(color: _gold, width: 2),
+      ),
+    );
+  }
+
+  Text _dialogTitle(String text) {
+    return Text(
+      text,
+      style: GoogleFonts.montserrat(
+        color: _white,
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+
+  // ---------------- CHANGE EMAIL DIALOG (styled) ----------------
   Future<void> _openChangeEmailDialog() async {
     final newEmailCtrl = TextEditingController();
     final passwordCtrl = TextEditingController();
+    bool _busy = false;
 
     await showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
-        return AlertDialog(
-          title: Text(
-            "Change Email",
-            style: GoogleFonts.montserrat(fontWeight: FontWeight.w700),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: newEmailCtrl,
-                decoration: const InputDecoration(hintText: "New email"),
+        return StatefulBuilder(builder: (context, setStateDialog) {
+          return _styledDialog(
+            title: _dialogTitle("Change Email"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: newEmailCtrl,
+                  decoration: _popupInputDec(hint: "New email"),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passwordCtrl,
+                  obscureText: true,
+                  decoration: _popupInputDec(hint: "Current password"),
+                ),
+              ],
+            ),
+            actions: [
+              // CANCEL — black text
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: _black),
+                onPressed: _busy ? null : () => Navigator.pop(context),
+                child: Text("Cancel", style: GoogleFonts.montserrat()),
               ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: passwordCtrl,
-                obscureText: true,
-                decoration: const InputDecoration(hintText: "Current password"),
+              const SizedBox(width: 8),
+              // SEND — filled black
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _black,
+                  foregroundColor: _white,
+                ),
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        final newEmail = newEmailCtrl.text.trim();
+                        final password = passwordCtrl.text;
+
+                        if (newEmail.isEmpty || !newEmail.contains("@")) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Enter a valid email")),
+                          );
+                          return;
+                        }
+                        if (password.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text("Enter password for verification")),
+                          );
+                          return;
+                        }
+
+                        setStateDialog(() => _busy = true);
+
+                        try {
+                          final user = _auth.currentUser!;
+                          final cred = EmailAuthProvider.credential(
+                            email: user.email ?? "",
+                            password: password,
+                          );
+                          await user.reauthenticateWithCredential(cred);
+                          await user.verifyBeforeUpdateEmail(newEmail);
+
+                          if (!mounted) return;
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content:
+                                  Text("Verification sent to new email."),
+                            ),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Failed to request email change")),
+                          );
+                        } finally {
+                          if (mounted) setStateDialog(() => _busy = false);
+                        }
+                      },
+                child: Text("Send", style: GoogleFonts.montserrat()),
               ),
             ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () async {
-                final newEmail = newEmailCtrl.text.trim();
-                final password = passwordCtrl.text;
-
-                if (newEmail.isEmpty || !newEmail.contains("@")) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Enter a valid email")),
-                  );
-                  return;
-                }
-                if (password.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Enter password for verification"),
-                    ),
-                  );
-                  return;
-                }
-
-                try {
-                  final user = _auth.currentUser!;
-                  final cred = EmailAuthProvider.credential(
-                    email: user.email ?? "",
-                    password: password,
-                  );
-                  await user.reauthenticateWithCredential(cred);
-                  await user.verifyBeforeUpdateEmail(newEmail);
-
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Verification sent to new email."),
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Failed to request email change"),
-                    ),
-                  );
-                }
-              },
-              child: const Text("Send"),
-            ),
-          ],
-        );
+          );
+        });
       },
     );
   }
 
-  // ---------------- CHANGE PASSWORD DIALOG ----------------
+  // ---------------- CREATE PASSWORD (for Google-only users) ----------------
+  Future<void> _openCreatePasswordDialog() async {
+    final newCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    bool _busy = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setStateDialog) {
+          return _styledDialog(
+            title: _dialogTitle("Create Password"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "You signed in with Google. Create a password to enable email/password login.",
+                  style: GoogleFonts.montserrat(fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: newCtrl,
+                  obscureText: true,
+                  decoration: _popupInputDec(hint: "New password (min 6 chars)"),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: confirmCtrl,
+                  obscureText: true,
+                  decoration: _popupInputDec(hint: "Confirm password"),
+                ),
+              ],
+            ),
+            actions: [
+              // Cancel — black text
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: _black),
+                onPressed: _busy ? null : () => Navigator.pop(context),
+                child: Text("Cancel", style: GoogleFonts.montserrat()),
+              ),
+              const SizedBox(width: 8),
+              // Create — filled black
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _black,
+                  foregroundColor: _white,
+                ),
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        final p1 = newCtrl.text.trim();
+                        final p2 = confirmCtrl.text.trim();
+
+                        if (p1.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    "Password must be at least 6 characters")),
+                          );
+                          return;
+                        }
+                        if (p1 != p2) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Passwords do not match")),
+                          );
+                          return;
+                        }
+
+                        setStateDialog(() => _busy = true);
+
+                        try {
+                          final user = _auth.currentUser!;
+                          final email = user.email;
+                          if (email == null || email.isEmpty) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Missing email on account.")),
+                            );
+                            return;
+                          }
+
+                          // Link the email/password credential to current user
+                          final credential = EmailAuthProvider.credential(
+                              email: email, password: p1);
+                          final result = await user.linkWithCredential(credential);
+
+                          // update Firestore updatedAt (and ensure email saved)
+                          await _db.collection('users').doc(result.user!.uid).set({
+                            "email": email,
+                            "updatedAt": FieldValue.serverTimestamp(),
+                          }, SetOptions(merge: true));
+
+                          // refresh local state
+                          await _loadUserOnce();
+
+                          if (!mounted) return;
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Password created successfully")),
+                          );
+                        } on FirebaseAuthException catch (e) {
+                          if (!mounted) return;
+                          String msg = "Failed to create password";
+                          if (e.code == 'provider-already-linked') {
+                            msg = "Password provider already linked.";
+                          } else if (e.code == 'credential-already-in-use') {
+                            msg = "This email already has a password account.";
+                          } else if (e.code == 'requires-recent-login') {
+                            msg = "Please re-login and try again.";
+                          }
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(msg)),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Failed to create password")),
+                          );
+                        } finally {
+                          if (mounted) setStateDialog(() => _busy = false);
+                        }
+                      },
+                child: Text("Create", style: GoogleFonts.montserrat()),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  // ---------------- CHANGE PASSWORD (styled) ----------------
   Future<void> _openChangePasswordDialog() async {
     final currentCtrl = TextEditingController();
     final newCtrl = TextEditingController();
     final confirmCtrl = TextEditingController();
+    bool _busy = false;
 
     await showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
-        return AlertDialog(
-          title: Text(
-            "Change Password",
-            style: GoogleFonts.montserrat(fontWeight: FontWeight.w700),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
+        return StatefulBuilder(builder: (context, setStateDialog) {
+          return _styledDialog(
+            title: _dialogTitle("Change Password"),
+            content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextField(
-                  controller: currentCtrl,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    hintText: "Current password",
+                if (!_hasPasswordProvider)
+                  Text(
+                    "You don't have a password yet. Use Create Password first.",
+                    style: GoogleFonts.montserrat(fontSize: 13),
                   ),
-                ),
-                const SizedBox(height: 10),
+                if (_hasPasswordProvider) ...[
+                  TextField(
+                    controller: currentCtrl,
+                    obscureText: true,
+                    decoration: _popupInputDec(hint: "Current password"),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 TextField(
                   controller: newCtrl,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    hintText: "New password (min 6 chars)",
-                  ),
+                  decoration: _popupInputDec(hint: "New password (min 6 chars)"),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 TextField(
                   controller: confirmCtrl,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    hintText: "Confirm new password",
-                  ),
+                  decoration: _popupInputDec(hint: "Confirm new password"),
                 ),
               ],
             ),
+            actions: [
+              // Cancel — black text
+              TextButton(
+                style: TextButton.styleFrom(foregroundColor: _black),
+                onPressed: _busy ? null : () => Navigator.pop(context),
+                child: Text("Cancel", style: GoogleFonts.montserrat()),
+              ),
+              const SizedBox(width: 8),
+              // Save — filled black
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _black,
+                  foregroundColor: _white,
+                ),
+                onPressed: _busy
+                    ? null
+                    : () async {
+                        final old = currentCtrl.text.trim();
+                        final p1 = newCtrl.text.trim();
+                        final p2 = confirmCtrl.text.trim();
+
+                        if (p1.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    "New password must be at least 6 characters")),
+                          );
+                          return;
+                        }
+                        if (p1 != p2) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Passwords do not match")),
+                          );
+                          return;
+                        }
+
+                        setStateDialog(() => _busy = true);
+
+                        try {
+                          final user = _auth.currentUser!;
+                          if (_hasPasswordProvider) {
+                            // reauthenticate with current password
+                            final cred = EmailAuthProvider.credential(
+                                email: user.email ?? "", password: old);
+                            await user.reauthenticateWithCredential(cred);
+                            await user.updatePassword(p1);
+
+                            if (!mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Password updated")),
+                            );
+                          } else {
+                            // No password provider: guide user to create one
+                            if (!mounted) return;
+                            Navigator.pop(context);
+                            await _openCreatePasswordDialog();
+                          }
+                        } on FirebaseAuthException catch (e) {
+                          if (!mounted) return;
+                          String msg = "Failed to update password";
+                          if (e.code == 'wrong-password') msg = "Current password is incorrect";
+                          if (e.code == 'requires-recent-login') msg = "Please re-login and try again";
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(msg)),
+                          );
+                        } catch (e) {
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Failed to update password")),
+                          );
+                        } finally {
+                          if (mounted) setStateDialog(() => _busy = false);
+                        }
+                      },
+                child: Text("Save", style: GoogleFonts.montserrat()),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+  // ---------------- Logout confirm (styled) ----------------
+  Future<void> _confirmLogout() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return _styledDialog(
+          title: _dialogTitle("Confirm Logout"),
+          content: Text(
+            "Are you sure you want to logout?",
+            style: GoogleFonts.montserrat(fontSize: 14),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Cancel"),
+              style: TextButton.styleFrom(foregroundColor: _black),
+              onPressed: () => Navigator.pop(context, false),
+              child: Text("Cancel", style: GoogleFonts.montserrat()),
             ),
-            TextButton(
-              onPressed: () async {
-                final current = currentCtrl.text;
-                final n1 = newCtrl.text;
-                final n2 = confirmCtrl.text;
-
-                if (n1.length < 6) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        "New password must be at least 6 characters",
-                      ),
-                    ),
-                  );
-                  return;
-                }
-
-                if (n1 != n2) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Passwords do not match")),
-                  );
-                  return;
-                }
-
-                try {
-                  final user = _auth.currentUser!;
-                  final cred = EmailAuthProvider.credential(
-                    email: user.email ?? "",
-                    password: current,
-                  );
-                  await user.reauthenticateWithCredential(cred);
-                  await user.updatePassword(n1);
-
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Password updated")),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Failed to update password")),
-                  );
-                }
-              },
-              child: const Text("Save"),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _black,
+                foregroundColor: _white,
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: Text("Logout", style: GoogleFonts.montserrat()),
             ),
           ],
         );
       },
     );
+
+    if (result == true) {
+      await FirebaseAuth.instance.signOut();
+      if (!mounted) return;
+      Navigator.pop(context);
+    }
   }
 
   // ---------------- FORM INPUT HELPER ----------------
@@ -393,7 +688,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
               horizontal: 12,
               vertical: 14,
             ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: const BorderSide(color: _black),
@@ -448,7 +744,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
         splashColor: Colors.black12,
         highlightColor: Colors.black12,
         hoverColor: Colors.black12,
-
         colorScheme: const ColorScheme.light(
           primary: _black,
           secondary: _gold,
@@ -456,7 +751,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
           onPrimary: _white,
           onSecondary: _black,
         ),
-
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
             foregroundColor: _black,
@@ -464,7 +758,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
             textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
           ),
         ),
-
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             side: const BorderSide(color: _black, width: 1.2),
@@ -473,7 +766,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
           ),
         ),
-
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
             backgroundColor: _black,
@@ -483,7 +775,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
           ),
         ),
       ),
-
       child: Scaffold(
         backgroundColor: _white,
         body: _loading
@@ -494,7 +785,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
                     SliverToBoxAdapter(
                       child: TopBannerTabs(active: AccountTab.settings),
                     ),
-
                     SliverAppBar(
                       pinned: true,
                       backgroundColor: _white,
@@ -633,23 +923,20 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
                                           borderSide: const BorderSide(
                                             color: _black,
                                           ),
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
                                         ),
                                         focusedBorder: OutlineInputBorder(
-                                          borderSide: const BorderSide(
-                                            color: _gold,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            6,
-                                          ),
+                                          borderSide:
+                                              const BorderSide(color: _gold),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
                                         ),
                                         contentPadding:
                                             const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 14,
-                                            ),
+                                          horizontal: 12,
+                                          vertical: 14,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -694,9 +981,16 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
                                     ),
                                   ),
                                   const SizedBox(width: 12),
+                                  // Button label depends on whether user has password provider
                                   OutlinedButton(
-                                    onPressed: _openChangePasswordDialog,
-                                    child: const Text("Change Password"),
+                                    onPressed: _hasPasswordProvider
+                                        ? _openChangePasswordDialog
+                                        : _openCreatePasswordDialog,
+                                    child: Text(
+                                      _hasPasswordProvider
+                                          ? "Change Password"
+                                          : "Create Password",
+                                    ),
                                   ),
                                 ],
                               ),
@@ -704,11 +998,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
                               const SizedBox(height: 40),
 
                               ElevatedButton(
-                                onPressed: () async {
-                                  await FirebaseAuth.instance.signOut();
-                                  if (!mounted) return;
-                                  Navigator.pop(context);
-                                },
+                                onPressed: _confirmLogout,
                                 child: const Text("Logout"),
                               ),
 
