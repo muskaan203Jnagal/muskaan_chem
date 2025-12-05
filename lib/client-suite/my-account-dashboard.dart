@@ -1,13 +1,12 @@
-// lib/client-suite/my_account_dashboard.dart
-
 import 'package:chem_revolutions/client-suite/my-orders.dart';
 import 'package:chem_revolutions/client-suite/my-wishlist.dart';
+import 'package:chem_revolutions/client-suite/account-settings.dart';
+import 'package:chem_revolutions/client-suite/my-addresses.dart';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'account-settings.dart';
-import 'my-addresses.dart';
 
 class MyAccountDashboard extends StatelessWidget {
   const MyAccountDashboard({Key? key}) : super(key: key);
@@ -18,7 +17,7 @@ class MyAccountDashboard extends StatelessWidget {
   static const double _avatarSize = 70.0;
   static const double _radius = 16.0;
 
-  /// FETCH USER DATA FROM FIRESTORE
+  /// FETCH USER DATA
   Future<Map<String, dynamic>> _getUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return {};
@@ -89,7 +88,7 @@ class MyAccountDashboard extends StatelessWidget {
 
                             child: Row(
                               children: [
-                                // Avatar (Dynamic First Letter)
+                                // Avatar
                                 Container(
                                   width: _avatarSize,
                                   height: _avatarSize,
@@ -149,89 +148,34 @@ class MyAccountDashboard extends StatelessWidget {
                                 spacing: gap,
                                 runSpacing: gap,
                                 children: [
-                                  SizedBox(
+                                  _buildCard(
+                                    context,
                                     width: cardWidth,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const MyOrdersPage(),
-                                          ),
-                                        );
-                                      },
-                                      child: DashboardActionCard(
-                                        title: 'My Orders',
-                                        subtitle:
-                                            'View your past orders & details',
-                                        gold: _gold,
-                                        radius: _radius,
-                                      ),
-                                    ),
+                                    title: "My Orders",
+                                    subtitle: "View your past orders & details",
+                                    page: const MyOrdersPage(),
                                   ),
-                                  SizedBox(
+                                  _buildCard(
+                                    context,
                                     width: cardWidth,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const MyAddressesPage(),
-                                          ),
-                                        );
-                                      },
-                                      child: DashboardActionCard(
-                                        title: 'My Addresses',
-                                        subtitle:
-                                            'Manage saved delivery addresses',
-                                        gold: _gold,
-                                        radius: _radius,
-                                      ),
-                                    ),
+                                    title: "My Addresses",
+                                    subtitle: "Manage saved delivery addresses",
+                                    page: const MyAddressesPage(),
                                   ),
-                                  SizedBox(
+                                  _buildCard(
+                                    context,
                                     width: cardWidth,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const MyWishlistPage(),
-                                          ),
-                                        );
-                                      },
-                                      child: DashboardActionCard(
-                                        title: 'My Wishlist',
-                                        subtitle:
-                                            'Your saved favourite products',
-                                        gold: _gold,
-                                        radius: _radius,
-                                      ),
-                                    ),
+                                    title: "My Wishlist",
+                                    subtitle: "Your saved favourite products",
+                                    page: const MyWishlistPage(),
                                   ),
-                                  SizedBox(
+                                  _buildCard(
+                                    context,
                                     width: cardWidth,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const AccountSettingsPage(),
-                                          ),
-                                        );
-                                      },
-                                      child: DashboardActionCard(
-                                        title: 'Account Settings',
-                                        subtitle:
-                                            'Edit your personal details & password',
-                                        gold: _gold,
-                                        radius: _radius,
-                                      ),
-                                    ),
+                                    title: "Account Settings",
+                                    subtitle:
+                                        "Edit your personal details & password",
+                                    page: const AccountSettingsPage(),
                                   ),
                                 ],
                               );
@@ -240,45 +184,37 @@ class MyAccountDashboard extends StatelessWidget {
 
                           const SizedBox(height: 40),
 
-                          // ---------------- SIGN OUT BUTTON ----------------
+                          // ---------------- SIGN OUT ----------------
                           Align(
                             alignment: Alignment.center,
-                            child: MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: GestureDetector(
-                                onTap: () async {
-                                  await FirebaseAuth.instance.signOut();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Signed out successfully.'),
+                            child: GestureDetector(
+                              onTap: () async {
+                                await FirebaseAuth.instance.signOut();
+                                Navigator.pop(context); // Back to homepage
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                  vertical: 14,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: _gold),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.25),
+                                      blurRadius: 40,
+                                      offset: const Offset(0, 8),
                                     ),
-                                  );
-                                },
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 32,
-                                    vertical: 14,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: _gold),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.25),
-                                        blurRadius: 40,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    'Sign out',
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  "Sign out",
+                                  style: GoogleFonts.montserrat(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
@@ -298,12 +234,40 @@ class MyAccountDashboard extends StatelessWidget {
       ),
     );
   }
+
+  // --------------------------------------------------------
+  // CARD NAVIGATION — USING push() (correct)
+  // --------------------------------------------------------
+  Widget _buildCard(
+    BuildContext context, {
+    required double width,
+    required String title,
+    required String subtitle,
+    required Widget page,
+  }) {
+    return SizedBox(
+      width: width,
+      child: GestureDetector(
+        onTap: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => page),
+          );
+        },
+        child: DashboardActionCard(
+          title: title,
+          subtitle: subtitle,
+          gold: _gold,
+          radius: _radius,
+        ),
+      ),
+    );
+  }
 }
 
-///////////////////////////////////////////////////////////////////////////
-// CARD CLASS (NO CHANGE IN UI)
-///////////////////////////////////////////////////////////////////////////
-
+// --------------------------------------------------------
+// CARD DESIGN (unchanged)
+// --------------------------------------------------------
 class DashboardActionCard extends StatefulWidget {
   final String title;
   final String subtitle;
@@ -349,7 +313,6 @@ class _DashboardActionCardState extends State<DashboardActionCard> {
             ),
           ],
         ),
-
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
