@@ -1,217 +1,498 @@
-// lib/dashboard.dart
-import 'package:cloud_firestore/cloud_firestore.dart';
+// ============================================================================
+// lib/admin/dashboard.dart (V9 - Composite Index Avoided)
+// ============================================================================
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
-class AdminDashboardPage extends StatefulWidget {
-  const AdminDashboardPage({Key? key}) : super(key: key);
+// --- Enums and Utility Classes ---
 
-  @override
-  State<AdminDashboardPage> createState() => _AdminDashboardPageState();
+enum DateFilter { today, last7Days, last30Days, thisMonth, allTime }
+
+class DateUtils {
+  static DateTime getStartDate(DateFilter filter) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    switch (filter) {
+      case DateFilter.today:
+        return today;
+      case DateFilter.last7Days:
+        return today.subtract(const Duration(days: 6));
+      case DateFilter.last30Days:
+        return today.subtract(const Duration(days: 29));
+      case DateFilter.thisMonth:
+        return DateTime(now.year, now.month, 1);
+      case DateFilter.allTime:
+        return DateTime(2000, 1, 1); 
+    }
+  }
+
+  static DateTime getPreviousStartDate(DateFilter filter, DateTime currentStartDate) {
+    final now = DateTime.now();
+    
+    switch (filter) {
+      case DateFilter.today:
+        return currentStartDate.subtract(const Duration(days: 1));
+      case DateFilter.last7Days:
+        return currentStartDate.subtract(const Duration(days: 7));
+      case DateFilter.last30Days:
+        return currentStartDate.subtract(const Duration(days: 30));
+      case DateFilter.thisMonth:
+        return DateTime(currentStartDate.year, currentStartDate.month - 1, 1);
+      case DateFilter.allTime:
+        return now.subtract(const Duration(days: 1)); 
+    }
+  }
+
+  static String getFilterName(DateFilter filter) {
+    switch (filter) {
+      case DateFilter.today:
+        return 'Today';
+      case DateFilter.last7Days:
+        return 'Last 7 Days';
+      case DateFilter.last30Days:
+        return 'Last 30 Days';
+      case DateFilter.thisMonth:
+        return 'This Month';
+      case DateFilter.allTime:
+        return 'All Time';
+    }
+  }
 }
 
-class _AdminDashboardPageState extends State<AdminDashboardPage> {
+
+// --- Main Dashboard Widget ---
+
+class DashboardPage extends StatefulWidget {
+  const DashboardPage({Key? key}) : super(key: key);
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  DateFilter _selectedFilter = DateFilter.last7Days;
+  DateTime? _customStartDate;
+  DateTime? _customEndDate;
+  
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NumberFormat _currencyFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '\$');
+  final int lowStockThreshold = 5; // Low stock defined as 5 units or less
 
-  // Configure thresholds
-  final int lowStockThreshold = 5;
-
-  // Helper: format as rupee-like string
-  String _currency(num n) {
-    final s = n.toInt().toString();
-    return '₹' + s.replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]},');
+  // Helper to fetch the earnings stream based on the selected filter/dates
+  Stream<QuerySnapshot> _getEarningsStream() {
+    DateTime startDate = DateUtils.getStartDate(_selectedFilter);
+    
+    // Custom range logic
+    if (_selectedFilter == DateFilter.allTime && _customStartDate != null && _customEndDate != null) {
+      startDate = _customStartDate!;
+      final endDate = _customEndDate!.add(const Duration(days: 1)); 
+      
+      return _firestore.collection('earnings')
+          .where('date', isGreaterThanOrEqualTo: startDate)
+          .where('date', isLessThan: endDate)
+          .orderBy('date', descending: true)
+          .snapshots();
+    }
+    
+    // True 'All Time'
+    if (_selectedFilter == DateFilter.allTime) {
+      return _firestore.collection('earnings')
+          .orderBy('date', descending: true)
+          .snapshots();
+    }
+    
+    // Preset filters
+    return _firestore.collection('earnings')
+        .where('date', isGreaterThanOrEqualTo: startDate)
+        .orderBy('date', descending: true)
+        .snapshots();
   }
 
-  // Copy recent orders CSV to clipboard
-  void _copyCSVFromDocs(List<QueryDocumentSnapshot> docs) {
-    final header = 'OrderID,Customer,Total,Status,Date';
-    final rows = docs.map((d) {
-      final data = d.data() as Map<String, dynamic>;
-      final id = d.id;
-      final customer = (data['customerName'] ?? data['customer'] ?? '').toString();
-      final total = (data['total'] ?? 0).toString();
-      final status = (data['status'] ?? '').toString();
-      final ts = data['createdAt'];
-      final date = ts is Timestamp ? ts.toDate().toIso8601String().split('T').first : (data['date'] ?? '');
-      return '$id,$customer,$total,$status,$date';
-    }).join('\n');
+  // Function to fetch and summarize previous period data
+  Future<Map<String, num>> _fetchPreviousPeriodData() async {
+    if (_selectedFilter == DateFilter.allTime) return {};
 
-    final csv = '$header\n$rows';
-    Clipboard.setData(ClipboardData(text: csv));
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('CSV copied to clipboard')));
-  }
+    final currentStartDate = DateUtils.getStartDate(_selectedFilter);
+    final prevStartDate = DateUtils.getPreviousStartDate(_selectedFilter, currentStartDate);
+    final prevEndDate = currentStartDate.subtract(const Duration(microseconds: 1));
+    
+    if (prevStartDate.isAfter(prevEndDate)) return {};
 
-  // Build daily sales for last 7 days from a list of order docs
-  List<_DaySales> _compute7DaySales(List<QueryDocumentSnapshot> docs) {
-    final now = DateTime.now();
-    final start = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6)); // inclusive
-    // init map
-    final map = <String, num>{};
-    for (int i = 0; i < 7; i++) {
-      final day = start.add(Duration(days: i));
-      final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
-      map[key] = 0;
+    final prevSnapshot = await _firestore.collection('earnings')
+        .where('date', isGreaterThanOrEqualTo: prevStartDate)
+        .where('date', isLessThan: prevEndDate.add(const Duration(days:1)))
+        .get();
+
+    double totalRevenue = 0.0;
+    int totalOrders = 0;
+    int totalItemsSold = 0;
+
+    for (var doc in prevSnapshot.docs) {
+      final data = doc.data() as Map<String, dynamic>;
+      totalRevenue += (data['totalRevenue'] ?? 0.0).toDouble();
+      totalOrders += (data['totalOrders'] as num? ?? 0).toInt();
+      totalItemsSold += (data['totalItemsSold'] as num? ?? 0).toInt();
     }
 
-    for (final d in docs) {
-      final data = d.data() as Map<String, dynamic>;
-      final ts = data['createdAt'];
-      if (ts is Timestamp) {
-        final dt = ts.toDate();
-        final key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-        if (map.containsKey(key)) {
-          final amt = (data['total'] is num) ? data['total'] as num : num.tryParse('${data['total']}') ?? 0;
-          map[key] = (map[key] ?? 0) + amt;
+    return {
+      'totalRevenue': totalRevenue,
+      'totalOrders': totalOrders,
+      'totalItemsSold': totalItemsSold,
+    };
+  }
+
+  // UPDATED: Function to fetch the list of low stock products without a composite index
+  Future<List<Map<String, dynamic>>> _fetchLowStockProducts() async {
+    try {
+      // 1. Query only by the 'status' field (only one where clause)
+      final QuerySnapshot snapshot = await _firestore.collection('products')
+          .where('status', isEqualTo: 'active')
+          .get();
+          
+      List<Map<String, dynamic>> lowStockList = [];
+      
+      // 2. Filter the results client-side (in the app) for the 'stock' threshold
+      for (var doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final stock = (data['stock'] as num? ?? 0).toInt();
+        
+        if (stock <= lowStockThreshold) {
+          // Found a low stock product
+          lowStockList.add({
+            'name': data['name'] as String? ?? 'Unnamed Product',
+            'stock': stock, 
+          });
         }
       }
+      
+      return lowStockList;
+    } catch (e) {
+      // You should now only see this if a single-field index for 'status' is missing
+      print('Error fetching low stock products: $e');
+      return [];
+    }
+  }
+
+  // Helper to calculate and display the comparison percentage
+  Widget _buildComparisonWidget(num currentValue, num previousValue, {bool isCurrency = false}) {
+    if (_selectedFilter == DateFilter.allTime || previousValue == 0) {
+      return const Text('vs. Prior Period N/A', style: TextStyle(color: Colors.grey, fontSize: 12));
     }
 
-    return map.entries.map((e) {
-      final parts = e.key.split('-');
-      final day = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
-      final label = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][day.weekday - 1];
-      return _DaySales(label, map[e.key] ?? 0);
-    }).toList();
+    double change = 0;
+    if (isCurrency) {
+        change = (currentValue.toDouble() - previousValue.toDouble());
+    } else {
+        change = (currentValue.toInt() - previousValue.toInt()).toDouble();
+    }
+    
+    double percentageChange = (change / previousValue) * 100;
+    
+    final changeColor = percentageChange >= 0 ? Colors.green[700] : Colors.red[700];
+    final icon = percentageChange >= 0 ? Icons.arrow_upward : Icons.arrow_downward;
+    
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: changeColor),
+        const SizedBox(width: 4),
+        Text(
+          '${percentageChange.abs().toStringAsFixed(1)}%',
+          style: TextStyle(color: changeColor, fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        const SizedBox(width: 4),
+        const Text('vs. Prior Period', style: TextStyle(color: Colors.grey, fontSize: 12)),
+      ],
+    );
+  }
+
+  Future<void> _selectCustomDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDateRange: _customStartDate != null && _customEndDate != null 
+          ? DateTimeRange(start: _customStartDate!, end: _customEndDate!)
+          : null,
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedFilter = DateFilter.allTime; 
+        _customStartDate = picked.start;
+        _customEndDate = picked.end;
+      });
+    }
+  }
+  
+  // Dedicated widget to display the list of low stock products
+  Widget _buildLowStockDetailCard(List<Map<String, dynamic>> products) {
+    if (products.isEmpty) {
+      return const SizedBox.shrink(); 
+    }
+    
+    return Card(
+      elevation: 2,
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.warning_amber, color: Colors.red),
+                const SizedBox(width: 8),
+                Text(
+                  'Products Needing Restock (Stock <= $lowStockThreshold)',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red[700]),
+                ),
+              ],
+            ),
+            const Divider(),
+            
+            // Constrain the height of the list view
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 200),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: products.length,
+                itemBuilder: (context, index) {
+                  final product = products[index];
+                  return ListTile(
+                    dense: true,
+                    title: Text(product['name'], style: const TextStyle(fontWeight: FontWeight.w500)),
+                    trailing: Text(
+                      'Stock: ${product['stock']}', 
+                      style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final thirtyDaysAgo = Timestamp.fromDate(now.subtract(const Duration(days: 30)));
-    final sevenDaysAgo = Timestamp.fromDate(now.subtract(const Duration(days: 7)));
-
-    // streams
-    final ordersLast30Stream = _firestore
-        .collection('orders')
-        .where('createdAt', isGreaterThanOrEqualTo: thirtyDaysAgo)
-        .snapshots();
-
-    final ordersLast7Stream = _firestore
-        .collection('orders')
-        .where('createdAt', isGreaterThanOrEqualTo: sevenDaysAgo)
-        .snapshots();
-
-    final recentOrdersStream = _firestore
-        .collection('orders')
-        .orderBy('createdAt', descending: true)
-        .limit(10)
-        .snapshots();
-
-    final lowStockStream =
-        _firestore.collection('products').where('stock', isLessThanOrEqualTo: lowStockThreshold).snapshots();
-
-    final usersStream = _firestore.collection('users').snapshots();
+    final DateFormat dateFormatter = DateFormat('MMM d, yyyy');
 
     return Scaffold(
-      backgroundColor: const Color(0xfff1f5f9),
       appBar: AppBar(
-        backgroundColor: Colors.indigo,
-        title: const Text("Dashboard", style: TextStyle(color: Colors.white)),
-        elevation: 0,
+        title: const Text('Sales Analytics Dashboard'),
+        elevation: 1,
+        automaticallyImplyLeading: false, 
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Metrics section: we merge ordersLast30Stream and usersStream and lowStockStream with nested StreamBuilders
-            StreamBuilder<QuerySnapshot>(
-              stream: ordersLast30Stream,
-              builder: (context, ordersSnap30) {
-                final ordersDocs30 = ordersSnap30.data?.docs ?? [];
-                // compute revenue and orders
-                num revenue30 = 0;
-                for (final d in ordersDocs30) {
-                  final data = d.data() as Map<String, dynamic>;
-                  final amt = (data['total'] is num) ? data['total'] as num : num.tryParse('${data['total']}') ?? 0;
-                  revenue30 += amt;
+            // --- Filter and Range Selection ---
+            Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    const Text('View Data For:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<DateFilter>(
+                        decoration: const InputDecoration(
+                          labelText: 'Time Period',
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        value: _selectedFilter,
+                        items: DateFilter.values.map((filter) {
+                          return DropdownMenuItem(
+                            value: filter,
+                            child: Text(DateUtils.getFilterName(filter)),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _selectedFilter = val;
+                              _customStartDate = null;
+                              _customEndDate = null;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 3,
+                      child: ElevatedButton.icon(
+                        onPressed: _selectCustomDateRange,
+                        icon: const Icon(Icons.date_range),
+                        label: Text(
+                          _customStartDate != null
+                              ? 'Custom Range: ${dateFormatter.format(_customStartDate!)} - ${dateFormatter.format(_customEndDate!)}'
+                              : 'Select Custom Range',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 48), 
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 20),
+            
+            // --- Low Stock Products List (Independent FutureBuilder) ---
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: _fetchLowStockProducts(),
+              builder: (context, lowStockSnapshot) {
+                if (lowStockSnapshot.connectionState == ConnectionState.waiting) {
+                  return const LinearProgressIndicator();
                 }
-                final ordersCount30 = ordersDocs30.length;
-
-                return StreamBuilder<QuerySnapshot>(
-                  stream: usersStream,
-                  builder: (context, usersSnap) {
-                    final usersCount = usersSnap.data?.docs.length ?? 0;
-                    return StreamBuilder<QuerySnapshot>(
-                      stream: lowStockStream,
-                      builder: (context, lowSnap) {
-                        final lowCount = lowSnap.data?.docs.length ?? 0;
-
-                        return Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: [
-                            _metricCard("Revenue (30d)", _currency(revenue30), Icons.attach_money, Colors.amber),
-                            _metricCard("Orders (30d)", "$ordersCount30", Icons.shopping_cart, Colors.indigo),
-                            _metricCard("Customers", "$usersCount", Icons.people, Colors.green),
-                            _metricCard("Low Stock", "$lowCount", Icons.error, Colors.red),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                );
+                
+                final lowStockProducts = lowStockSnapshot.data ?? [];
+                
+                return _buildLowStockDetailCard(lowStockProducts);
               },
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+            
+            // --- Analytics Stream Builder (Metrics) ---
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _getEarningsStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-            // Sales chart + quick actions: chart uses ordersLast7Stream
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: ordersLast7Stream,
-                    builder: (context, snap) {
-                      final docs = snap.data?.docs ?? [];
-                      final daySales = _compute7DaySales(docs);
-                      return _salesChart(daySales);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 260,
-                  child: _quickActionsWidget(recentOrdersStream),
-                ),
-              ],
-            ),
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(child: Text('No earnings data found for this period.'));
+                  }
+                  
+                  final dailyData = snapshot.data!.docs;
+                  double totalRevenue = 0.0;
+                  int totalOrders = 0;
+                  int totalItemsSold = 0;
+                  
+                  // Calculate overall totals from the filtered daily data (Current Period)
+                  for (var doc in dailyData) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    totalRevenue += (data['totalRevenue'] ?? 0.0).toDouble();
+                    
+                    final dailyOrders = (data['totalOrders'] as num? ?? 0).toInt();
+                    totalOrders += dailyOrders;
+                    
+                    final dailyItems = (data['totalItemsSold'] as num? ?? 0).toInt();
+                    totalItemsSold += dailyItems;
+                  }
+                  
+                  // Wrap metric display in a FutureBuilder to fetch comparison data
+                  return FutureBuilder<Map<String, num>>(
+                    future: _fetchPreviousPeriodData(),
+                    builder: (context, prevSnapshot) {
+                      if (prevSnapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: Text('Loading comparison data...')); 
+                      }
 
-            const SizedBox(height: 20),
+                      final prevData = prevSnapshot.data ?? {};
+                      final prevTotalRevenue = (prevData['totalRevenue'] ?? 0.0).toDouble();
+                      final prevTotalOrders = (prevData['totalOrders'] ?? 0).toInt();
+                      final prevTotalItemsSold = (prevData['totalItemsSold'] ?? 0).toInt();
+                      
+                      final aov = totalOrders > 0 ? totalRevenue / totalOrders : 0.0;
+                      final prevAov = prevTotalOrders > 0 ? prevTotalRevenue / prevTotalOrders : 0.0;
 
-            // Recent orders + low stock list
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: recentOrdersStream,
-                    builder: (context, snap) {
-                      final docs = snap.data?.docs ?? [];
-                      return _recentOrdersTable(docs);
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                SizedBox(
-                  width: 300,
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: lowStockStream,
-                    builder: (context, snap) {
-                      final docs = snap.data?.docs ?? [];
-                      final items = docs.map((d) {
-                        final data = d.data() as Map<String, dynamic>;
-                        return ProductStock(
-                          data['name']?.toString() ?? 'Unnamed',
-                          data['sku']?.toString() ?? d.id,
-                          (data['stock'] is int) ? data['stock'] as int : (int.tryParse('${data['stock']}') ?? 0),
-                        );
-                      }).toList();
-                      return _lowStockCard(items);
-                    },
-                  ),
-                ),
-              ],
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // --- Summary Cards Row 1: Revenue, Orders, Items Sold, AOV ---
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildStatCard(
+                                title: 'Total Revenue', 
+                                value: _currencyFormatter.format(totalRevenue), 
+                                color: Colors.green,
+                                comparisonWidget: _buildComparisonWidget(totalRevenue, prevTotalRevenue, isCurrency: true),
+                              ),
+                              _buildStatCard(
+                                title: 'Total Orders', 
+                                value: totalOrders.toString(), 
+                                color: Colors.blue,
+                                comparisonWidget: _buildComparisonWidget(totalOrders, prevTotalOrders),
+                              ),
+                              _buildStatCard(
+                                title: 'Total Items Sold', 
+                                value: totalItemsSold.toString(), 
+                                color: Colors.orange,
+                                comparisonWidget: _buildComparisonWidget(totalItemsSold, prevTotalItemsSold),
+                              ),
+                              _buildStatCard(
+                                title: 'Avg. Order Value (AOV)', 
+                                value: _currencyFormatter.format(aov), 
+                                color: Colors.purple,
+                                comparisonWidget: _buildComparisonWidget(aov, prevAov, isCurrency: true),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 16),
+                          
+                          const Text('Daily Revenue Breakdown', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                          const Divider(),
+                          
+                          // --- Daily Breakdown List ---
+                          Expanded(
+                            child: Card(
+                              elevation: 1,
+                              child: ListView.builder(
+                                itemCount: dailyData.length,
+                                itemBuilder: (context, index) {
+                                  final doc = dailyData[index];
+                                  final data = doc.data() as Map<String, dynamic>;
+                                  
+                                  final revenue = (data['totalRevenue'] ?? 0.0).toDouble();
+                                  final orders = (data['totalOrders'] as num? ?? 0).toInt();
+                                  final itemsSold = (data['totalItemsSold'] as num? ?? 0).toInt();
+                                  final date = (data['date'] as Timestamp).toDate();
+
+                                  return ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundColor: Colors.indigo,
+                                      child: Text(date.day.toString(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                    ),
+                                    title: Text('Sales for ${DateFormat('EEEE, MMM d, yyyy').format(date)}'),
+                                    subtitle: Text('$orders Orders | $itemsSold Items Sold'),
+                                    trailing: Text(
+                                      _currencyFormatter.format(revenue),
+                                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.green[700]),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -219,218 +500,40 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  // ============================
-  // UI helper builders
-  // ============================
-  Widget _metricCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      width: 260,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-      child: Row(
-        children: [
-          Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 12, color: Colors.black54)),
-            const SizedBox(height: 4),
-            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          ])),
-          Icon(icon, size: 40, color: color),
-        ],
-      ),
-    );
-  }
-
-  Widget _salesChart(List<_DaySales> daySales) {
-    // small representation that draws the chart according to daySales values
-    return Container(
-      height: 280,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-      child: CustomPaint(
-        painter: _DayChartPainter(daySales),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            const SizedBox(height: 8),
-            Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: daySales.map((d) => Expanded(child: Center(child: Text(d.label, style: const TextStyle(fontSize: 12, color: Colors.black54))))).toList())
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _quickActionsWidget(Stream<QuerySnapshot> recentOrdersStream) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text("Quick Actions", style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        ElevatedButton(
-          onPressed: () {
-            // Try to push to catalog route - keep fallback message if not registered
-            const catalogRouteName = '/catalog';
-            try {
-              Navigator.of(context).pushNamed(catalogRouteName);
-            } catch (e) {
-              _showText('Catalog route not found — register it in main.dart or update this code.');
-            }
-          },
-          child: const Text("Create Product"),
-        ),
-        const SizedBox(height: 8),
-        OutlinedButton(
-          onPressed: () => _showText('Open refunds view (stub) — implement navigation/API here.'),
-          child: const Text("Process Refund"),
-        ),
-        const SizedBox(height: 12),
-        // Export Orders CSV — we read the latest 10 shown in the Recent Orders stream
-        StreamBuilder<QuerySnapshot>(
-          stream: recentOrdersStream,
-          builder: (context, snap) {
-            final docs = snap.data?.docs ?? [];
-            return ElevatedButton(
-              onPressed: docs.isEmpty ? null : () => _copyCSVFromDocs(docs),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              child: const Text("Export Orders CSV"),
-            );
-          },
-        ),
-      ]),
-    );
-  }
-
-  Widget _recentOrdersTable(List<QueryDocumentSnapshot> docs) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text("Recent Orders", style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        docs.isEmpty
-            ? const Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(child: Text('No recent orders')),
-              )
-            : SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: DataTable(
-                  columnSpacing: 12,
-                  headingRowColor: MaterialStateProperty.all(Colors.grey[200]),
-                  columns: const [
-                    DataColumn(label: Text("Order")),
-                    DataColumn(label: Text("Customer")),
-                    DataColumn(label: Text("Total")),
-                    DataColumn(label: Text("Status")),
-                    DataColumn(label: Text("Date")),
-                  ],
-                  rows: docs.map((d) {
-                    final data = d.data() as Map<String, dynamic>;
-                    final id = d.id;
-                    final customer = (data['customerName'] ?? data['customer'] ?? '').toString();
-                    final total = (data['total'] ?? 0).toString();
-                    final status = (data['status'] ?? '').toString();
-                    final ts = data['createdAt'];
-                    final date = ts is Timestamp ? ts.toDate().toIso8601String().split('T').first : (data['date'] ?? '');
-                    return DataRow(cells: [
-                      DataCell(Text(id)),
-                      DataCell(Text(customer)),
-                      DataCell(Text('₹$total')),
-                      DataCell(Text(status)),
-                      DataCell(Text(date)),
-                    ]);
-                  }).toList(),
+  // Stat Card Widget
+  Widget _buildStatCard({
+    required String title, 
+    required String value, 
+    required Color color,
+    Widget? comparisonWidget, 
+  }) {
+    return Expanded(
+      child: Card(
+        elevation: 4,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 28, 
+                  fontWeight: FontWeight.bold,
+                  color: color,
                 ),
               ),
-      ]),
+              const SizedBox(height: 4),
+              if (comparisonWidget != null) comparisonWidget,
+            ],
+          ),
+        ),
+      ),
     );
   }
-
-  Widget _lowStockCard(List<ProductStock> items) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text("Low Stock Items", style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        if (items.isEmpty)
-          const Text("All good — no low stock items", style: TextStyle(color: Colors.black54))
-        else
-          ...items.map((p) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(p.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text("SKU: ${p.sku}", style: const TextStyle(color: Colors.black54, fontSize: 12)),
-                  ]),
-                  Text("${p.stock} left",
-                      style: TextStyle(color: p.stock <= 2 ? Colors.red : Colors.orange, fontWeight: FontWeight.bold))
-                ]),
-              )),
-      ]),
-    );
-  }
-
-  void _showText(String s) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(s)));
-  }
-}
-
-// ==========================
-// lightweight models & painters
-// ==========================
-class ProductStock {
-  final String name;
-  final String sku;
-  final int stock;
-  ProductStock(this.name, this.sku, this.stock);
-}
-
-class _DaySales {
-  final String label;
-  final num amount;
-  _DaySales(this.label, this.amount);
-}
-
-class _DayChartPainter extends CustomPainter {
-  final List<_DaySales> days;
-  _DayChartPainter(this.days);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (days.isEmpty) return;
-    final paintLine = Paint()
-      ..color = Colors.indigo
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke;
-    final paintGrid = Paint()
-      ..color = Colors.grey.shade300
-      ..strokeWidth = 1;
-
-    final maxVal = days.map((d) => d.amount).reduce((a, b) => a > b ? a : b).toDouble();
-    final itemCount = days.length;
-    final dx = size.width / (itemCount - 1);
-
-    // grid
-    for (int i = 0; i < 4; i++) {
-      final y = size.height / 4 * i;
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paintGrid);
-    }
-
-    // line
-    final path = Path();
-    for (int i = 0; i < days.length; i++) {
-      final x = dx * i;
-      final y = size.height - (maxVal == 0 ? 0 : (days[i].amount / maxVal) * size.height);
-      if (i == 0) path.moveTo(x, y);
-      else path.lineTo(x, y);
-    }
-    canvas.drawPath(path, paintLine);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
