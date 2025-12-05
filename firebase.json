@@ -1,1 +1,29 @@
-{"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"chemrevolutions","configurations":{"web":"1:615124766600:web:e8ea875dd559a2228fb43d"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "chemrevolutions",
+          "configurations": {
+            "web": "1:615124766600:web:e8ea875dd559a2228fb43d"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "runtime": "nodejs20",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}
