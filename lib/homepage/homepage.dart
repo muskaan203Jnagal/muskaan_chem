@@ -2,40 +2,39 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// 💡 FIX: Import the shared Product model
+// Import Product model
 import 'package:chem_revolutions/models/product.dart';
 
-// 💡 NEW: Import product details page
+// Product details page
 import 'package:chem_revolutions/product_page/product_page.dart';
 
-// 💡 NEW: Import signup page
+// Signup page
 import 'package:chem_revolutions/client-suite/signup.dart';
 
-// 💡 NEW: Import My Account Dashboard
+// My Account Dashboard
 import 'package:chem_revolutions/client-suite/my-account-dashboard.dart';
 
-// ------------------------------
-// HomePage Widget
-// ------------------------------
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final productsCollection =
-        FirebaseFirestore.instance.collection('products');
+    final productsCollection = FirebaseFirestore.instance.collection(
+      "products",
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Product Catalog',
+          "Product Catalog",
           style: TextStyle(color: Colors.black),
         ),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        automaticallyImplyLeading: false,
 
+        // ⭐ DO NOT USE automaticallyImplyLeading: false
+        // This keeps browser/mobile BACK BUTTON working correctly.
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -51,15 +50,19 @@ class HomePage extends StatelessWidget {
                 } else {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const MyAccountDashboard()),
+                    MaterialPageRoute(
+                      builder: (_) => const MyAccountDashboard(),
+                    ),
                   );
                 }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -73,9 +76,10 @@ class HomePage extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: productsCollection.snapshots(),
         builder: (context, snapshot) {
-
           if (snapshot.hasError) {
-            return Center(child: Text('Error loading products: ${snapshot.error}'));
+            return Center(
+              child: Text("Error loading products: ${snapshot.error}"),
+            );
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -83,7 +87,7 @@ class HomePage extends StatelessWidget {
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('No products found.'));
+            return const Center(child: Text("No products found."));
           }
 
           final products = snapshot.data!.docs
@@ -109,9 +113,6 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// ------------------------------
-// ProductCard UI (Untouched)
-// ------------------------------
 class ProductCard extends StatelessWidget {
   final Product product;
 
@@ -120,16 +121,14 @@ class ProductCard extends StatelessWidget {
   void _navigate(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => ProductPage(product: product),
-      ),
+      MaterialPageRoute(builder: (_) => ProductPage(product: product)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final proxiedUrl =
-        'https://wsrv.nl/?url=${Uri.encodeComponent(product.mainImageUrl)}';
+        "https://wsrv.nl/?url=${Uri.encodeComponent(product.mainImageUrl)}";
 
     return InkWell(
       onTap: () => _navigate(context),
@@ -152,8 +151,9 @@ class ProductCard extends StatelessWidget {
           children: [
             Expanded(
               child: ClipRRect(
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
                 child: Image.network(
                   proxiedUrl,
                   fit: BoxFit.cover,
@@ -164,7 +164,7 @@ class ProductCard extends StatelessWidget {
                       child: CircularProgressIndicator(
                         value: progress.expectedTotalBytes != null
                             ? progress.cumulativeBytesLoaded /
-                                progress.expectedTotalBytes!
+                                  progress.expectedTotalBytes!
                             : null,
                       ),
                     );
@@ -175,12 +175,16 @@ class ProductCard extends StatelessWidget {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.broken_image,
-                              size: 40, color: Colors.grey),
+                          Icon(
+                            Icons.broken_image,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
                           SizedBox(height: 8),
-                          Text('Image Unavailable',
-                              style:
-                                  TextStyle(fontSize: 12, color: Colors.grey)),
+                          Text(
+                            "Image Unavailable",
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
                         ],
                       ),
                     ),
@@ -203,9 +207,7 @@ class ProductCard extends StatelessWidget {
                       fontSize: 16,
                     ),
                   ),
-
                   const SizedBox(height: 4),
-
                   Text(
                     '\$${product.price.toStringAsFixed(2)}',
                     style: TextStyle(
@@ -214,9 +216,7 @@ class ProductCard extends StatelessWidget {
                       fontSize: 18,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -243,7 +243,7 @@ class ProductCard extends StatelessWidget {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),

@@ -1,19 +1,21 @@
+// lib/product_page/product_page.dart
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // 💡 Imports for your existing shared models
-import 'package:chem_revolutions/models/product.dart'; 
-import 'package:chem_revolutions/models/review.dart'; 
+import 'package:chem_revolutions/models/product.dart';
+import 'package:chem_revolutions/models/review.dart';
 // Assuming the path to ProductPage is correct for recursive navigation
-import 'package:chem_revolutions/product_page/product_page.dart'; 
+import 'package:chem_revolutions/product_page/product_page.dart';
 
 /// ===============================
 /// MAIN PRODUCT PAGE (STATEFUL)
 /// ===============================
 
 class ProductPage extends StatefulWidget {
-  final Product product; 
+  final Product product;
 
   const ProductPage({super.key, required this.product});
 
@@ -26,13 +28,76 @@ class _ProductPageState extends State<ProductPage> {
   int _quantity = 1;
   bool _subscriptionSelected = false;
   bool _hoverAddToCart = false;
+  bool _hoverWishlist = false;
 
   int _selectedReviewTab = 0; // 0 = Reviews, 1 = Questions
   int _reviewsToShow = 3; // for "Load more" functionality
 
+  // --------------------------
+  // Firestore helpers for wishlist
+  // --------------------------
+  Future<void> addToWishlist(String productId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please log in to use wishlist.")),
+      );
+      return;
+    }
+    final uid = user.uid;
+    final ref = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('wishlist')
+        .doc(productId);
+
+    await ref.set({'addedAt': FieldValue.serverTimestamp()});
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Added to wishlist")));
+  }
+
+  Future<void> removeFromWishlist(String productId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please log in to use wishlist.")),
+      );
+      return;
+    }
+    final uid = user.uid;
+    final ref = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('wishlist')
+        .doc(productId);
+
+    await ref.delete();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Removed from wishlist")));
+  }
+
+  Stream<bool> isWishlisted(String productId) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      // user not logged in -> always false
+      return Stream.value(false);
+    }
+    final uid = user.uid;
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('wishlist')
+        .doc(productId)
+        .snapshots()
+        .map((doc) => doc.exists);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final proxiedUrl = 'https://wsrv.nl/?url=${Uri.encodeComponent(widget.product.mainImageUrl)}'; 
+    final proxiedUrl =
+        'https://wsrv.nl/?url=${Uri.encodeComponent(widget.product.mainImageUrl)}';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
@@ -52,16 +117,18 @@ class _ProductPageState extends State<ProductPage> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 1200),
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 24,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildTopProductSection(isWide, proxiedUrl), 
+                        _buildTopProductSection(isWide, proxiedUrl),
                         const SizedBox(height: 40),
-                        _buildReviewsSection(widget.product.id), 
+                        _buildReviewsSection(widget.product.id),
                         const SizedBox(height: 32),
-                        _buildDynamicRelatedProducts(widget.product.id), 
+                        _buildDynamicRelatedProducts(widget.product.id),
                         const SizedBox(height: 40),
                       ],
                     ),
@@ -80,15 +147,9 @@ class _ProductPageState extends State<ProductPage> {
   /// ===============================
 
   Widget _buildTopProductSection(bool isWide, String proxiedUrl) {
-    final left = Expanded(
-      flex: 5,
-      child: _buildImageGallery(proxiedUrl),
-    );
+    final left = Expanded(flex: 5, child: _buildImageGallery(proxiedUrl));
 
-    final right = Expanded(
-      flex: 6,
-      child: _buildProductDetails(),
-    );
+    final right = Expanded(flex: 6, child: _buildProductDetails());
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -99,19 +160,11 @@ class _ProductPageState extends State<ProductPage> {
       child: isWide
           ? Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                left,
-                const SizedBox(width: 32),
-                right,
-              ],
+              children: [left, const SizedBox(width: 32), right],
             )
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                left,
-                const SizedBox(height: 24),
-                right,
-              ],
+              children: [left, const SizedBox(height: 24), right],
             ),
     );
   }
@@ -127,7 +180,7 @@ class _ProductPageState extends State<ProductPage> {
             child: Container(
               color: Colors.white,
               child: Image.network(
-                proxiedUrl, 
+                proxiedUrl,
                 fit: BoxFit.contain,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
@@ -135,11 +188,15 @@ class _ProductPageState extends State<ProductPage> {
                 },
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
+                    color: Colors.grey[200],
+                    child: const Center(
+                      child: Icon(
+                        Icons.broken_image,
+                        size: 80,
+                        color: Colors.grey,
                       ),
-                    );
+                    ),
+                  );
                 },
               ),
             ),
@@ -166,13 +223,10 @@ class _ProductPageState extends State<ProductPage> {
         // Subtitle
         Text(
           widget.product.description.split('.').first,
-          style: GoogleFonts.montserrat(
-            fontSize: 13,
-            color: Colors.grey[800],
-          ),
+          style: GoogleFonts.montserrat(fontSize: 13, color: Colors.grey[800]),
         ),
         const SizedBox(height: 8),
-        // Rating 
+        // Rating
         Row(
           children: [
             _buildStars(5.0),
@@ -186,7 +240,7 @@ class _ProductPageState extends State<ProductPage> {
             ),
             const SizedBox(width: 4),
             Text(
-              'Based on 8 Reviews', 
+              'Based on 8 Reviews',
               style: GoogleFonts.montserrat(
                 fontSize: 12,
                 color: Colors.grey[700],
@@ -234,18 +288,15 @@ class _ProductPageState extends State<ProductPage> {
         // Quantity
         Row(
           children: [
-            Text(
-              'Quantity',
-              style: GoogleFonts.montserrat(fontSize: 13),
-            ),
+            Text('Quantity', style: GoogleFonts.montserrat(fontSize: 13)),
             const SizedBox(width: 16),
             _buildQuantitySelector(),
           ],
         ),
         const SizedBox(height: 18),
 
-        // Add to cart
-        _buildAddToCartButton(),
+        // Add to cart + Wishlist row (updated)
+        _buildAddToCartAndWishlistRow(),
         const SizedBox(height: 16),
       ],
     );
@@ -264,7 +315,7 @@ class _ProductPageState extends State<ProductPage> {
           _buildPurchaseOptionRow(
             selected: _subscriptionSelected,
             title: 'Subscribe and save 15%',
-            price: price * 0.85, 
+            price: price * 0.85,
             onTap: () {
               setState(() => _subscriptionSelected = true);
             },
@@ -282,7 +333,119 @@ class _ProductPageState extends State<ProductPage> {
       ),
     );
   }
-  
+
+  // -----------------------
+  // New: Add to cart + Wishlist row
+  // -----------------------
+  Widget _buildAddToCartAndWishlistRow() {
+    return Row(
+      children: [
+        // Add to cart (reduced width using Expanded)
+        Expanded(
+          flex: 5,
+          child: MouseRegion(
+            onEnter: (_) => setState(() => _hoverAddToCart = true),
+            onExit: (_) => setState(() => _hoverAddToCart = false),
+            child: GestureDetector(
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Added $_quantity x ${widget.product.name} to cart (${_subscriptionSelected ? 'Subscription' : 'One-time'})',
+                    ),
+                  ),
+                );
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                height: 46,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _hoverAddToCart
+                      ? const Color(0xFFB8860B)
+                      : Colors.black,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'ADD TO CART',
+                  style: GoogleFonts.montserrat(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(width: 12),
+
+        // Wishlist button: uses StreamBuilder to get real-time wishlist state
+        SizedBox(
+          width: 46,
+          height: 46,
+          child: StreamBuilder<bool>(
+            stream: isWishlisted(widget.product.id),
+            builder: (context, snap) {
+              final wishlisted = snap.data ?? false;
+
+              Color bgColor;
+              IconData iconData;
+              Color iconColor = Colors.white;
+
+              if (wishlisted) {
+                // already wishlisted -> gold background + filled heart
+                bgColor = _hoverWishlist
+                    ? const Color(0xFFB8860B).withOpacity(0.95)
+                    : const Color(0xFFB8860B);
+                iconData = Icons.favorite;
+              } else {
+                // not wishlisted -> black background, outline heart
+                bgColor = _hoverWishlist
+                    ? const Color(0xFFB8860B)
+                    : Colors.black;
+                iconData = Icons.favorite_border;
+              }
+
+              return MouseRegion(
+                onEnter: (_) => setState(() => _hoverWishlist = true),
+                onExit: (_) => setState(() => _hoverWishlist = false),
+                child: GestureDetector(
+                  onTap: () async {
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Please log in to use wishlist."),
+                        ),
+                      );
+                      return;
+                    }
+                    if (wishlisted) {
+                      await removeFromWishlist(widget.product.id);
+                    } else {
+                      await addToWishlist(widget.product.id);
+                    }
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Icon(iconData, color: iconColor, size: 22),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
   // 💡 HELPER WIDGETS (Defined only once)
 
   Widget _buildStars(double rating, {double size = 18}) {
@@ -293,19 +456,24 @@ class _ProductPageState extends State<ProductPage> {
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
         if (index < full) {
-          return Icon(Icons.star,
-              size: size, color: const Color(0xFFFACC15));
+          return Icon(Icons.star, size: size, color: const Color(0xFFFACC15));
         } else if (index == full && half) {
-          return Icon(Icons.star_half,
-              size: size, color: const Color(0xFFFACC15));
+          return Icon(
+            Icons.star_half,
+            size: size,
+            color: const Color(0xFFFACC15),
+          );
         } else {
-          return Icon(Icons.star_border,
-              size: size, color: const Color(0xFFFACC15));
+          return Icon(
+            Icons.star_border,
+            size: size,
+            color: const Color(0xFFFACC15),
+          );
         }
       }),
     );
   }
-  
+
   Widget _buildPurchaseOptionRow({
     required bool selected,
     required String title,
@@ -369,10 +537,7 @@ class _ProductPageState extends State<ProductPage> {
               child: const Center(child: Icon(Icons.remove, size: 16)),
             ),
           ),
-          Container(
-            width: 1,
-            color: const Color(0xFFE4E4E7),
-          ),
+          Container(width: 1, color: const Color(0xFFE4E4E7)),
           Expanded(
             child: Center(
               child: Text(
@@ -384,10 +549,7 @@ class _ProductPageState extends State<ProductPage> {
               ),
             ),
           ),
-          Container(
-            width: 1,
-            color: const Color(0xFFE4E4E7),
-          ),
+          Container(width: 1, color: const Color(0xFFE4E4E7)),
           Expanded(
             child: InkWell(
               onTap: () {
@@ -403,46 +565,9 @@ class _ProductPageState extends State<ProductPage> {
     );
   }
 
-  Widget _buildAddToCartButton() {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hoverAddToCart = true),
-      onExit: (_) => setState(() => _hoverAddToCart = false),
-      child: GestureDetector(
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Added $_quantity x ${widget.product.name} to cart (${_subscriptionSelected ? 'Subscription' : 'One-time'})',
-              ),
-            ),
-          );
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          height: 46,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: _hoverAddToCart ? const Color(0xFFB8860B) : Colors.black,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            'ADD TO CART',
-            style: GoogleFonts.montserrat(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              letterSpacing: 1.1,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   /// ===============================
   /// REVIEWS SECTION (INTEGRATED WITH FIREBASE)
   /// ===============================
-
   Widget _buildReviewsSection(String productId) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -452,16 +577,20 @@ class _ProductPageState extends State<ProductPage> {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text('Error loading reviews: ${snapshot.error}'));
+          return Center(
+            child: Text('Error loading reviews: ${snapshot.error}'),
+          );
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final reviews = snapshot.data!.docs.map((doc) => Review.fromFirestore(doc)).toList();
+        final reviews = snapshot.data!.docs
+            .map((doc) => Review.fromFirestore(doc))
+            .toList();
         final reviewCount = reviews.length;
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -469,10 +598,7 @@ class _ProductPageState extends State<ProductPage> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 3,
-                  child: _buildRatingSummary(reviewCount),
-                ),
+                Expanded(flex: 3, child: _buildRatingSummary(reviewCount)),
                 const SizedBox(width: 16),
                 Expanded(
                   flex: 2,
@@ -515,8 +641,10 @@ class _ProductPageState extends State<ProductPage> {
                     },
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: Colors.black),
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
                     ),
                     child: Text(
                       'Load More Reviews',
@@ -558,26 +686,20 @@ class _ProductPageState extends State<ProductPage> {
         const SizedBox(height: 4),
         Text(
           'Based on $reviewCount Reviews',
-          style: GoogleFonts.montserrat(
-            fontSize: 12,
-            color: Colors.grey[700],
-          ),
+          style: GoogleFonts.montserrat(fontSize: 12, color: Colors.grey[700]),
         ),
         const SizedBox(height: 16),
         Column(
           children: List.generate(5, (i) {
             final star = 5 - i;
-            final count = star == 5 ? reviewCount : 0; 
+            final count = star == 5 ? reviewCount : 0;
             final ratio = star == 5 ? 1.0 : 0.0;
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 4),
               child: Row(
                 children: [
-                  Text(
-                    '$star',
-                    style: GoogleFonts.montserrat(fontSize: 11),
-                  ),
+                  Text('$star', style: GoogleFonts.montserrat(fontSize: 11)),
                   const SizedBox(width: 4),
                   const Icon(Icons.star, size: 12, color: Color(0xFFFACC15)),
                   const SizedBox(width: 6),
@@ -620,7 +742,7 @@ class _ProductPageState extends State<ProductPage> {
       ],
     );
   }
-  
+
   Widget _primaryRedButton(String label, {required VoidCallback onTap}) {
     return SizedBox(
       height: 36,
@@ -630,9 +752,7 @@ class _ProductPageState extends State<ProductPage> {
           backgroundColor: const Color(0xFFE11D2A),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(4),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         ),
         child: Text(
           label,
@@ -677,7 +797,7 @@ class _ProductPageState extends State<ProductPage> {
 
     return Row(
       children: [
-        tab('Reviews', 0, reviewCount), 
+        tab('Reviews', 0, reviewCount),
         tab('Questions', 1, 2), // Dummy count for questions
         const Spacer(),
         Container(
@@ -709,13 +829,13 @@ class _ProductPageState extends State<ProductPage> {
     final toShow = reviews.take(_reviewsToShow).toList();
 
     if (toShow.isEmpty) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0),
-          child: Text(
-            'Be the first to leave a review for ${widget.product.name}!',
-            style: GoogleFonts.montserrat(fontSize: 13, color: Colors.grey[700]),
-          ),
-        );
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        child: Text(
+          'Be the first to leave a review for ${widget.product.name}!',
+          style: GoogleFonts.montserrat(fontSize: 13, color: Colors.grey[700]),
+        ),
+      );
     }
 
     return Column(
@@ -733,7 +853,7 @@ class _ProductPageState extends State<ProductPage> {
                     radius: 18,
                     backgroundColor: const Color(0xFFE5E7EB),
                     child: Text(
-                      review.initials, 
+                      review.initials,
                       style: GoogleFonts.montserrat(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
@@ -749,7 +869,7 @@ class _ProductPageState extends State<ProductPage> {
                         Row(
                           children: [
                             Text(
-                              review.name, 
+                              review.name,
                               style: GoogleFonts.montserrat(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
@@ -769,7 +889,7 @@ class _ProductPageState extends State<ProductPage> {
                         _buildStars(review.rating, size: 16),
                         const SizedBox(height: 2),
                         Text(
-                          review.title, 
+                          review.title,
                           style: GoogleFonts.montserrat(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -777,7 +897,7 @@ class _ProductPageState extends State<ProductPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          review.text, 
+                          review.text,
                           style: GoogleFonts.montserrat(
                             fontSize: 13,
                             color: Colors.grey[800],
@@ -819,13 +939,13 @@ class _ProductPageState extends State<ProductPage> {
                               style: GoogleFonts.montserrat(fontSize: 11),
                             ),
                           ],
-                        )
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 10),
                   Text(
-                    review.date, 
+                    review.date,
                     style: GoogleFonts.montserrat(
                       fontSize: 11,
                       color: Colors.grey[600],
@@ -841,7 +961,7 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   // --- Modal Logic (Defined only once) ---
-  
+
   void _openReviewSheet() {
     showModalBottomSheet(
       context: context,
@@ -883,12 +1003,12 @@ class _ProductPageState extends State<ProductPage> {
               }
 
               InputDecoration decoration(String label) => InputDecoration(
-                    labelText: label,
-                    labelStyle: GoogleFonts.montserrat(fontSize: 12),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  );
+                labelText: label,
+                labelStyle: GoogleFonts.montserrat(fontSize: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              );
 
               return SingleChildScrollView(
                 child: Column(
@@ -929,13 +1049,7 @@ class _ProductPageState extends State<ProductPage> {
                     ),
                     const SizedBox(height: 4),
                     Row(
-                      children: [
-                        star(1),
-                        star(2),
-                        star(3),
-                        star(4),
-                        star(5),
-                      ],
+                      children: [star(1), star(2), star(3), star(4), star(5)],
                     ),
                     const SizedBox(height: 14),
                     TextField(
@@ -1020,12 +1134,10 @@ class _ProductPageState extends State<ProductPage> {
         final questionCtrl = TextEditingController();
 
         InputDecoration decoration(String label) => InputDecoration(
-              labelText: label,
-              labelStyle: GoogleFonts.montserrat(fontSize: 12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(6),
-              ),
-            );
+          labelText: label,
+          labelStyle: GoogleFonts.montserrat(fontSize: 12),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+        );
 
         return Padding(
           padding: EdgeInsets.only(
@@ -1132,24 +1244,30 @@ class _ProductPageState extends State<ProductPage> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('products')
-          .orderBy('createdAt', descending: true) 
-          .limit(4) 
+          .orderBy('createdAt', descending: true)
+          .limit(4)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Center(child: Text('Error loading related products: ${snapshot.error}'));
+          return Center(
+            child: Text('Error loading related products: ${snapshot.error}'),
+          );
         }
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final allProducts = snapshot.data!.docs.map((doc) => Product.fromFirestore(doc)).toList();
-        final relatedProducts = allProducts.where((p) => p.id != currentProductId).toList();
-        
+        final allProducts = snapshot.data!.docs
+            .map((doc) => Product.fromFirestore(doc))
+            .toList();
+        final relatedProducts = allProducts
+            .where((p) => p.id != currentProductId)
+            .toList();
+
         if (relatedProducts.isEmpty) {
-          return const SizedBox.shrink(); 
+          return const SizedBox.shrink();
         }
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -1166,7 +1284,9 @@ class _ProductPageState extends State<ProductPage> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: relatedProducts.map((p) => _buildRelatedCard(p)).toList(),
+                children: relatedProducts
+                    .map((p) => _buildRelatedCard(p))
+                    .toList(),
               ),
             ),
           ],
@@ -1177,16 +1297,20 @@ class _ProductPageState extends State<ProductPage> {
 
   Widget _buildRelatedCard(Product p) {
     // Generate benefits/bullets from the first two sentences of the description
-    final bullets = p.description.split('.').take(2).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-    final proxiedUrl = 'https://wsrv.nl/?url=${Uri.encodeComponent(p.mainImageUrl)}'; 
+    final bullets = p.description
+        .split('.')
+        .take(2)
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final proxiedUrl =
+        'https://wsrv.nl/?url=${Uri.encodeComponent(p.mainImageUrl)}';
 
     return InkWell(
       onTap: () {
         // Navigate to the product page for the related product
         Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => ProductPage(product: p),
-          ),
+          MaterialPageRoute(builder: (context) => ProductPage(product: p)),
         );
       },
       child: Container(
@@ -1213,7 +1337,9 @@ class _ProductPageState extends State<ProductPage> {
                     return const Center(child: CircularProgressIndicator());
                   },
                   errorBuilder: (context, error, stackTrace) {
-                    return const Center(child: Icon(Icons.broken_image, size: 40));
+                    return const Center(
+                      child: Icon(Icons.broken_image, size: 40),
+                    );
                   },
                 ),
               ),
@@ -1238,8 +1364,11 @@ class _ProductPageState extends State<ProductPage> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.check,
-                              size: 14, color: Color(0xFF16A34A)),
+                          const Icon(
+                            Icons.check,
+                            size: 14,
+                            color: Color(0xFF16A34A),
+                          ),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -1273,9 +1402,7 @@ class _ProductPageState extends State<ProductPage> {
               child: OutlinedButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${p.name} added to cart!'),
-                    ),
+                    SnackBar(content: Text('${p.name} added to cart!')),
                   );
                 },
                 style: OutlinedButton.styleFrom(

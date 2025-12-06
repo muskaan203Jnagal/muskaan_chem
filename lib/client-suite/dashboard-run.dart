@@ -16,7 +16,7 @@ class DashboardRunner extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: "Dashboard Runner",
+      title: "My Account Dashboard",
       theme: ThemeData(
         useMaterial3: true,
         textTheme: GoogleFonts.montserratTextTheme(),
