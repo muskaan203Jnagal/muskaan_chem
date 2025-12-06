@@ -1,35 +1,85 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-// 💡 FIX: Import the shared Product model
-import 'package:chem_revolutions/models/product.dart'; 
-// 💡 NEW: Import the detailed product page
-import 'package:chem_revolutions/product_page/product_page.dart'; 
-// NOTE: You may need to change 'package:chem_revolutions' to your project's name.
+import 'package:firebase_auth/firebase_auth.dart';
 
-// 1. Product Model class REMOVED from this file
+// Import Product model
+import 'package:chem_revolutions/models/product.dart';
 
-// 2. HomePage Widget
+// Product details page
+import 'package:chem_revolutions/product_page/product_page.dart';
+
+// Signup page
+import 'package:chem_revolutions/client-suite/signup.dart';
+
+// My Account Dashboard
+import 'package:chem_revolutions/client-suite/my-account-dashboard.dart';
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Reference the 'products' collection. Update this string if your collection name is different.
-    final productsCollection = FirebaseFirestore.instance.collection('products');
+    final productsCollection = FirebaseFirestore.instance.collection(
+      "products",
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Product Catalog'),
+        title: const Text(
+          "Product Catalog",
+          style: TextStyle(color: Colors.black),
+        ),
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
+
+        // ⭐ DO NOT USE automaticallyImplyLeading: false
+        // This keeps browser/mobile BACK BUTTON working correctly.
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: ElevatedButton(
+              onPressed: () {
+                final user = FirebaseAuth.instance.currentUser;
+
+                if (user == null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ClientSignupPage()),
+                  );
+                } else {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MyAccountDashboard(),
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              child: const Text("My Account"),
+            ),
+          ),
+        ],
       ),
+
       body: StreamBuilder<QuerySnapshot>(
-        // Listen to real-time changes in the 'products' collection
         stream: productsCollection.snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Error loading products: ${snapshot.error}'));
+            return Center(
+              child: Text("Error loading products: ${snapshot.error}"),
+            );
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -37,26 +87,24 @@ class HomePage extends StatelessWidget {
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(child: Text('No products found.'));
+            return const Center(child: Text("No products found."));
           }
 
-          // Convert DocumentSnapshots into a list of Product objects
-          // This now uses the shared Product.fromFirestore constructor
-          final products = snapshot.data!.docs.map((doc) => Product.fromFirestore(doc)).toList();
+          final products = snapshot.data!.docs
+              .map((doc) => Product.fromFirestore(doc))
+              .toList();
 
-          // Display products in a modern, responsive grid view
           return GridView.builder(
             padding: const EdgeInsets.all(16.0),
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 300, // Max width per card
-              childAspectRatio: 0.7, // Card height relative to width
+              maxCrossAxisExtent: 300,
+              childAspectRatio: 0.7,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
             itemCount: products.length,
             itemBuilder: (context, index) {
-              final product = products[index];
-              return ProductCard(product: product);
+              return ProductCard(product: products[index]);
             },
           );
         },
@@ -65,34 +113,26 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// 3. Product Card Widget (Modern Design)
 class ProductCard extends StatelessWidget {
   final Product product;
-  
-  const ProductCard({
-    super.key,
-    required this.product,
-  });
 
-  // Wrap the card in an InkWell for tap functionality
-  void _navigateToProductPage(BuildContext context) {
+  const ProductCard({super.key, required this.product});
+
+  void _navigate(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        // The Product object passed here is now the correct shared type
-        builder: (context) => ProductPage(product: product), 
-      ),
+      MaterialPageRoute(builder: (_) => ProductPage(product: product)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    // 💡 CORS FIX: Apply CORS proxy to the image URL for loading in Flutter Web.
-    final proxiedUrl = 'https://wsrv.nl/?url=${Uri.encodeComponent(product.mainImageUrl)}'; 
+    final proxiedUrl =
+        "https://wsrv.nl/?url=${Uri.encodeComponent(product.mainImageUrl)}";
 
-    return InkWell( // Wrap the whole card in InkWell
-      onTap: () => _navigateToProductPage(context), // Handle the tap to navigate
-      borderRadius: BorderRadius.circular(12), // Match the container's border radius
+    return InkWell(
+      onTap: () => _navigate(context),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -109,46 +149,50 @@ class ProductCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Section
             Expanded(
               child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(12),
+                ),
                 child: Image.network(
-                  proxiedUrl, 
+                  proxiedUrl,
                   fit: BoxFit.cover,
                   width: double.infinity,
-                  // Show a loading indicator while fetching the image
-                  loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                    if (loadingProgress == null) return child;
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
                     return Center(
                       child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                        value: progress.expectedTotalBytes != null
+                            ? progress.cumulativeBytesLoaded /
+                                  progress.expectedTotalBytes!
                             : null,
                       ),
                     );
                   },
-                  // Show a fallback error message if loading fails
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.broken_image, size: 40, color: Colors.grey),
-                            SizedBox(height: 8),
-                            Text('Image Unavailable', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                          ],
-                        ),
+                  errorBuilder: (_, __, ___) => Container(
+                    color: Colors.grey[200],
+                    child: const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.broken_image,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            "Image Unavailable",
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
               ),
             ),
-            
-            // Details Section
+
             Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -173,16 +217,13 @@ class ProductCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  
-                  // Add to Cart Button (UI Only)
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        // UI only action as requested
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('${product.name} added to cart! (UI only action)'),
+                            content: Text('${product.name} added to cart!'),
                             duration: const Duration(seconds: 1),
                           ),
                         );

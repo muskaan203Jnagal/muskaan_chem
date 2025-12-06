@@ -15,7 +15,6 @@ const Color _black = Colors.black;
 const Color _white = Colors.white;
 const Color _gold = Color(0xFFC9A34E);
 
-/// Desktop max width
 const double _maxWidth = 1000;
 
 /// ------------------------------------------------------------------
@@ -31,7 +30,7 @@ class TopBannerTabs extends StatelessWidget {
 
   const TopBannerTabs({super.key, required this.active});
 
-  // Navigation helper
+  //  🔥 FIXED NAVIGATION HELPER
   void _go(BuildContext context, AccountTab tab) {
     if (tab == active) return;
 
@@ -42,18 +41,21 @@ class TopBannerTabs extends StatelessWidget {
           MaterialPageRoute(builder: (_) => const MyOrdersPage()),
         );
         break;
+
       case AccountTab.addresses:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const MyAddressesPage()),
         );
         break;
+
       case AccountTab.wishlist:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const MyWishlistPage()),
         );
         break;
+
       case AccountTab.settings:
         Navigator.pushReplacement(
           context,
@@ -70,7 +72,6 @@ class TopBannerTabs extends StatelessWidget {
 
     final width = MediaQuery.of(context).size.width;
 
-    // RESPONSIVE avatar sizes
     final double avatarSize = width < 500
         ? 60
         : width < 900
@@ -96,14 +97,14 @@ class TopBannerTabs extends StatelessWidget {
           final fullName = (data["name"] ?? "").toString().trim();
           if (fullName.isNotEmpty) name = fullName;
 
-          avatarLetter = name.isNotEmpty ? name[0].toUpperCase() : "U";
+          avatarLetter = name[0].toUpperCase();
         }
 
         return Column(
           children: [
-            // -----------------------------------------------------------
-            // RESPONSIVE BLACK BANNER
-            // -----------------------------------------------------------
+            //-------------------------------------------------------------
+            // BLACK BANNER
+            //-------------------------------------------------------------
             Container(
               width: double.infinity,
               color: _black,
@@ -143,9 +144,9 @@ class TopBannerTabs extends StatelessWidget {
               ),
             ),
 
-            // -----------------------------------------------------------
-            // TABS AREA
-            // -----------------------------------------------------------
+            //-------------------------------------------------------------
+            // TAB BAR
+            //-------------------------------------------------------------
             Container(
               color: _white,
               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -164,15 +165,12 @@ class TopBannerTabs extends StatelessWidget {
     );
   }
 
-  /// ----------------------------------------------------------------
-  /// CHOOSE LAYOUT BASED ON SCREEN WIDTH
-  /// ----------------------------------------------------------------
+  /// --------------------------------------------------------------
+  /// RESPONSIVE TAB LAYOUT
+  /// --------------------------------------------------------------
   Widget _buildResponsiveTabs(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
 
-    // -----------------------------
-    // MOBILE (HORIZONTAL IN ONE ROW)
-    // -----------------------------
     if (width < 500) {
       return Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -185,27 +183,6 @@ class TopBannerTabs extends StatelessWidget {
       );
     }
 
-    // -----------------------------
-    // TABLET (same as DESKTOP)
-    // -----------------------------
-    if (width < 700) {
-      return Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _tabItem(context, "My Orders", AccountTab.orders),
-          const SizedBox(width: 28),
-          _tabItem(context, "My Addresses", AccountTab.addresses),
-          const SizedBox(width: 28),
-          _tabItem(context, "My Wishlist", AccountTab.wishlist),
-          const SizedBox(width: 28),
-          _tabItem(context, "Account Settings", AccountTab.settings),
-        ],
-      );
-    }
-
-    // -----------------------------
-    // DESKTOP
-    // -----------------------------
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -220,15 +197,12 @@ class TopBannerTabs extends StatelessWidget {
     );
   }
 
-  // ----------------------------------------------------------------------
-  // MOBILE TAB BOX (compact, horizontal, 2-line text)
-  // ----------------------------------------------------------------------
+  /// MOBILE TAB WIDGET
   Widget _mobileTab(BuildContext context, String label, AccountTab tab) {
-    final bool isActive = (tab == active);
+    final isActive = tab == active;
 
-    // Split into two lines at the first space
     List<String> parts = label.split(" ");
-    String line1 = parts.length > 0 ? parts[0] : label;
+    String line1 = parts.first;
     String line2 = parts.length > 1 ? parts.sublist(1).join(" ") : "";
 
     return Expanded(
@@ -242,22 +216,16 @@ class TopBannerTabs extends StatelessWidget {
                 children: [
                   Text(
                     line1,
-                    textAlign: TextAlign.center,
                     style: GoogleFonts.montserrat(
                       fontSize: 12,
-                      height: 1.5,
-                      color: _black,
                       fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                   if (line2.isNotEmpty)
                     Text(
                       line2,
-                      textAlign: TextAlign.center,
                       style: GoogleFonts.montserrat(
                         fontSize: 12,
-                        height: 1.0,
-                        color: _black,
                         fontWeight: isActive
                             ? FontWeight.w700
                             : FontWeight.w500,
@@ -266,16 +234,11 @@ class TopBannerTabs extends StatelessWidget {
                 ],
               ),
             ),
-
-            // underline
             AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               height: 3,
               width: 28,
-              decoration: BoxDecoration(
-                color: isActive ? _gold : Colors.transparent,
-                borderRadius: BorderRadius.circular(2),
-              ),
+              color: isActive ? _gold : Colors.transparent,
             ),
           ],
         ),
@@ -283,16 +246,9 @@ class TopBannerTabs extends StatelessWidget {
     );
   }
 
-  // ----------------------------------------------------------------------
-  // DESKTOP / TABLET TAB
-  // ----------------------------------------------------------------------
-  Widget _tabItem(
-    BuildContext context,
-    String label,
-    AccountTab tab, {
-    bool mobile = false,
-  }) {
-    final bool isActive = (tab == active);
+  /// DESKTOP / TABLET TAB
+  Widget _tabItem(BuildContext context, String label, AccountTab tab) {
+    final isActive = tab == active;
 
     return InkWell(
       onTap: () => _go(context, tab),
@@ -304,8 +260,8 @@ class TopBannerTabs extends StatelessWidget {
               label,
               style: GoogleFonts.montserrat(
                 fontSize: 14,
-                color: _black,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                color: _black,
               ),
             ),
           ),
@@ -313,10 +269,7 @@ class TopBannerTabs extends StatelessWidget {
             duration: const Duration(milliseconds: 180),
             height: 3,
             width: 60,
-            decoration: BoxDecoration(
-              color: isActive ? _gold : Colors.transparent,
-              borderRadius: BorderRadius.circular(2),
-            ),
+            color: isActive ? _gold : Colors.transparent,
           ),
         ],
       ),
