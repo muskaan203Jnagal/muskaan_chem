@@ -14,65 +14,18 @@ import 'package:chem_revolutions/client-suite/signup.dart';
 // My Account Dashboard
 import 'package:chem_revolutions/client-suite/my-account-dashboard.dart';
 
+// Import the AppScaffold
+import 'package:chem_revolutions/header.dart';
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final productsCollection = FirebaseFirestore.instance.collection(
-      "products",
-    );
+    final productsCollection = FirebaseFirestore.instance.collection("products");
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Product Catalog",
-          style: TextStyle(color: Colors.black),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-
-        // ⭐ DO NOT USE automaticallyImplyLeading: false
-        // This keeps browser/mobile BACK BUTTON working correctly.
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: ElevatedButton(
-              onPressed: () {
-                final user = FirebaseAuth.instance.currentUser;
-
-                if (user == null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const ClientSignupPage()),
-                  );
-                } else {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const MyAccountDashboard(),
-                    ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-              child: const Text("My Account"),
-            ),
-          ),
-        ],
-      ),
-
+    return AppScaffold(
+      currentPage: 'HOME',
       body: StreamBuilder<QuerySnapshot>(
         stream: productsCollection.snapshots(),
         builder: (context, snapshot) {
@@ -94,18 +47,69 @@ class HomePage extends StatelessWidget {
               .map((doc) => Product.fromFirestore(doc))
               .toList();
 
-          return GridView.builder(
-            padding: const EdgeInsets.all(16.0),
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 300,
-              childAspectRatio: 0.7,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-            ),
-            itemCount: products.length,
-            itemBuilder: (context, index) {
-              return ProductCard(product: products[index]);
-            },
+          return Column(
+            children: [
+              // Account button section
+              Container(
+                padding: const EdgeInsets.all(16),
+                color: Colors.white,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        final user = FirebaseAuth.instance.currentUser;
+
+                        if (user == null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ClientSignupPage(),
+                            ),
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MyAccountDashboard(),
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 10,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      child: const Text("My Account"),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Product Grid
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 300,
+                    childAspectRatio: 0.7,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                  ),
+                  itemCount: products.length,
+                  itemBuilder: (context, index) {
+                    return ProductCard(product: products[index]);
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
