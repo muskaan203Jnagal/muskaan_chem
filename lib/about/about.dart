@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:chem_revolutions/header.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(
