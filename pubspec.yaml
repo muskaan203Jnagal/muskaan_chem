@@ -32,6 +32,5 @@ flutter:
     - assets/icons/
     - assets/images/
     - assets/images/products/
-
-  - assets/icons/google_logo.png
-  - assets/icons/chemo.png
+    - assets/icons/google_logo.png
+    - assets/icons/chemo.png

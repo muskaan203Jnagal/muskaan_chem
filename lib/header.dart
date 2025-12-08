@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:chem_revolutions/homepage/homepage.dart';
 
+import 'package:chem_revolutions/about/about.dart';
+
 // Main reusable widget that wraps your pages with header and drawer
 class AppScaffold extends StatefulWidget {
   final String currentPage;
   final Widget body;
 
-  const AppScaffold({
-    Key? key,
-    required this.currentPage,
-    required this.body,
-  }) : super(key: key);
+  const AppScaffold({Key? key, required this.currentPage, required this.body})
+    : super(key: key);
 
   @override
   State<AppScaffold> createState() => _AppScaffoldState();
@@ -45,10 +44,7 @@ class _AppScaffoldState extends State<AppScaffold>
       vsync: this,
     );
 
-    _drawerSlideAnimation = Tween<double>(
-      begin: -1.0,
-      end: 0.0,
-    ).animate(
+    _drawerSlideAnimation = Tween<double>(begin: -1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _drawerAnimationController!,
         curve: Curves.easeOutCubic,
@@ -121,11 +117,8 @@ class _AppScaffoldState extends State<AppScaffold>
                     'assets/icons/chemo.png',
                     height: 42,
                     fit: BoxFit.contain,
-                    errorBuilder: (c, e, s) => const Icon(
-                      Icons.image,
-                      color: Colors.white,
-                      size: 36,
-                    ),
+                    errorBuilder: (c, e, s) =>
+                        const Icon(Icons.image, color: Colors.white, size: 36),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
@@ -252,10 +245,7 @@ class _AppScaffoldState extends State<AppScaffold>
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
         ),
         child: Icon(icon, color: Colors.white, size: 24),
       ),
@@ -327,8 +317,11 @@ class _AppScaffoldState extends State<AppScaffold>
                       duration: const Duration(milliseconds: 500),
                       transitionBuilder:
                           (Widget child, Animation<double> animation) {
-                        return FadeTransition(opacity: animation, child: child);
-                      },
+                            return FadeTransition(
+                              opacity: animation,
+                              child: child,
+                            );
+                          },
                       child: Text(
                         _messages[_currentIndex],
                         key: ValueKey<int>(_currentIndex),
@@ -359,9 +352,7 @@ class _AppScaffoldState extends State<AppScaffold>
               ),
 
               // Page body content
-              SliverFillRemaining(
-                child: widget.body,
-              ),
+              SliverFillRemaining(child: widget.body),
             ],
           ),
 
@@ -414,10 +405,7 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final bool isMobile;
 
-  _StickyHeaderDelegate({
-    required this.child,
-    required this.isMobile,
-  });
+  _StickyHeaderDelegate({required this.child, required this.isMobile});
 
   @override
   double get minExtent => isMobile ? 80 : 100;
@@ -427,7 +415,10 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return child;
   }
 
@@ -652,8 +643,7 @@ class _AppHeaderState extends State<AppHeader> {
                       _searchController.clear();
                     });
                   },
-                  child:
-                      const Icon(Icons.close, color: Colors.white, size: 28),
+                  child: const Icon(Icons.close, color: Colors.white, size: 28),
                 ),
               ),
             ],
@@ -672,8 +662,14 @@ class _AppHeaderState extends State<AppHeader> {
                   _NavLink(
                     text: 'ABOUT',
                     isActive: widget.currentPage == 'ABOUT',
-                    onTap: () => widget.onNavigate('ABOUT'),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AboutPage()),
+                      );
+                    },
                   ),
+
                   const SizedBox(width: 40),
                   _NavLink(
                     text: 'GETVERIFIED',
@@ -801,11 +797,7 @@ class _NavLink extends StatefulWidget {
   final bool isActive;
   final VoidCallback? onTap;
 
-  const _NavLink({
-    required this.text,
-    this.isActive = false,
-    this.onTap,
-  });
+  const _NavLink({required this.text, this.isActive = false, this.onTap});
 
   @override
   State<_NavLink> createState() => _NavLinkState();
