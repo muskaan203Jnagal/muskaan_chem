@@ -6,9 +6,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-void main(){
-  runApp(const MyFooter());
-}
 
 class MyFooter extends StatelessWidget {
   const MyFooter({super.key});
