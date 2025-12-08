@@ -4,7 +4,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+void main(){
+  runApp(const MyFooter());
+}
 
 class MyFooter extends StatelessWidget {
   const MyFooter({super.key});
@@ -16,6 +20,7 @@ class MyFooter extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: const Color.fromARGB(255, 8, 8, 8),
+        textTheme: GoogleFonts.montserratTextTheme(ThemeData.dark().textTheme),
       ),
       home: const Scaffold(body: FooterDemoPage()),
     );
@@ -166,7 +171,7 @@ class Footer extends StatelessWidget {
             Text(
               copyright,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: GoogleFonts.montserrat(
                 color: muted,
                 fontSize: isMobile ? 11 : 13,
               ),
@@ -289,7 +294,7 @@ class Footer extends StatelessWidget {
               children: [
                 Text(
                   "Follow Us",
-                  style: TextStyle(
+                  style: GoogleFonts.montserrat(
                     fontSize: isCentered ? 14 : 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -324,7 +329,7 @@ class Footer extends StatelessWidget {
         Text(
           column.title,
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: GoogleFonts.montserrat(
             fontWeight: FontWeight.bold,
             fontSize: isMobile ? 14 : 16,
           ),
@@ -382,7 +387,7 @@ class _LinkTextState extends State<LinkText> {
         onTap: widget.onTap,
         child: AnimatedDefaultTextStyle(
           duration: const Duration(milliseconds: 150),
-          style: TextStyle(
+          style: GoogleFonts.montserrat(
             color: hover
                 ? const Color.fromARGB(255, 209, 209, 170)
                 : widget.mutedColor,
