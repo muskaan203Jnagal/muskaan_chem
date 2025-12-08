@@ -2,6 +2,10 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:chem_revolutions/header.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+import 'package:chem_revolutions/footer.dart';
 
 void main() {
   runApp(
@@ -258,360 +262,411 @@ class _AboutPageState extends State<AboutPage>
         ? 2
         : 4; // responsive grid
 
-    return AppScaffold(
-      currentPage: 'ABOUT',
-      body: Stack(
-        children: [
-          // BACKGROUND
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("assets/images/bg.jpg"),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.35),
-                  BlendMode.darken,
-                ),
-              ),
-            ),
-          ),
-          // LEFT SIDE GYM GIRL IMAGE
-          Positioned(
-            left: 20, // ⭐ thoda inside
-            top: 40, // ⭐ thoda upar
-            child: Opacity(
-              opacity: 0.25,
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
-                child: SizedBox(
-                  height: w < 560
-                      ? 260
-                      : w < 950
-                      ? 360
-                      : 500,
-                  width:
-                      (w < 560
-                          ? 260
-                          : w < 950
-                          ? 360
-                          : 500) *
-                      0.70,
-                  child: Image.asset(
-                    "assets/images/girl.jpg",
-                    fit: BoxFit.cover,
+    return DefaultTextStyle.merge(
+      style: GoogleFonts.montserrat(),
+      child: AppScaffold(
+        currentPage: 'ABOUT',
+        body: Stack(
+          children: [
+            // BACKGROUND
+            Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage("assets/images/bg.jpg"),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withOpacity(0.35),
+                    BlendMode.darken,
                   ),
                 ),
               ),
             ),
-          ),
-
-          // RIGHT SIDE STATIC GYM IMAGE
-          Positioned(
-            right: 20, // ⭐ shift more inside
-            top: 40, // ⭐ little up
-            child: Opacity(
-              opacity: 0.25,
-              child: ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
-                child: SizedBox(
-                  height: w < 560
-                      ? 260
-                      : w < 950
-                      ? 360
-                      : 500,
-                  width:
-                      (w < 560
-                          ? 260
-                          : w < 950
-                          ? 360
-                          : 500) *
-                      0.70,
-                  child: Image.asset(
-                    "assets/images/boy.jpg",
-                    fit: BoxFit.cover,
+            // LEFT SIDE GYM GIRL IMAGE
+            Positioned(
+              left: 20,
+              top: 40,
+              child: Opacity(
+                opacity: 0.25,
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(
+                    sigmaX: 0.8,
+                    sigmaY: 0.8,
+                  ), // ⭐ blur ghataya
+                  child: SizedBox(
+                    height: w < 560
+                        ? 260
+                        : w < 950
+                        ? 360
+                        : 500,
+                    width:
+                        (w < 560
+                            ? 260
+                            : w < 950
+                            ? 360
+                            : 500) *
+                        0.70,
+                    child: Image.asset(
+                      "assets/images/girl.jpg",
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          // MAIN CONTENT
-          SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 16),
+            // RIGHT SIDE STATIC GYM IMAGE
+            Positioned(
+              right: 20, // ⭐ shift more inside
+              top: 40, // ⭐ little up
+              child: Opacity(
+                opacity: 0.25,
+                child: ImageFiltered(
+                  imageFilter: ImageFilter.blur(sigmaX: 3.0, sigmaY: 3.0),
+                  child: SizedBox(
+                    height: w < 560
+                        ? 260
+                        : w < 950
+                        ? 360
+                        : 500,
+                    width:
+                        (w < 560
+                            ? 260
+                            : w < 950
+                            ? 360
+                            : 500) *
+                        0.70,
+                    child: Image.asset(
+                      "assets/images/boy.jpg",
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
-                  // LOGO
-                  Image.asset("assets/images/chem-logo.png", height: 110),
-                  const SizedBox(height: 12),
+            // MAIN CONTENT
+            SafeArea(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
 
-                  // HERO SECTION
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 22),
-                    child: Column(
-                      children: [
-                        AnimatedBuilder(
-                          animation: _titleAnim,
-                          builder: (_, __) {
-                            return ShaderMask(
-                              shaderCallback: (bounds) {
-                                return LinearGradient(
-                                  begin: Alignment(_titleAnim.value, 0),
-                                  end: Alignment(_titleAnim.value + 1, 0),
-                                  colors: [
-                                    Colors.white,
-                                    Colors.white,
-                                    Color(0xffd4b15f),
-                                    Colors.white,
-                                  ],
-                                  stops: const [0.0, 0.4, 0.6, 1.0],
-                                ).createShader(bounds);
-                              },
-                              child: const Text(
-                                "ABOUT CHEM REVOLUTION",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w900,
-                                  color: Colors.white,
-                                  letterSpacing: 1,
+                    // LOGO
+                    Image.asset("assets/images/chem-logo.png", height: 110),
+                    const SizedBox(height: 12),
+
+                    // HERO SECTION
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 22),
+                      child: Column(
+                        children: [
+                          AnimatedBuilder(
+                            animation: _titleAnim,
+                            builder: (_, __) {
+                              return ShaderMask(
+                                shaderCallback: (bounds) {
+                                  return LinearGradient(
+                                    begin: Alignment(_titleAnim.value, 0),
+                                    end: Alignment(_titleAnim.value + 1, 0),
+                                    colors: [
+                                      Colors.white,
+                                      Colors.white,
+                                      Color(0xffd4b15f),
+                                      Colors.white,
+                                    ],
+                                    stops: const [0.0, 0.4, 0.6, 1.0],
+                                  ).createShader(bounds);
+                                },
+                                child: const Text(
+                                  "ABOUT CHEM REVOLUTION",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 36,
+                                    fontWeight: FontWeight.w900,
+                                    color: Colors.white,
+                                    letterSpacing: 1,
+                                  ),
                                 ),
+                              );
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          Container(
+                            width: 160,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              gradient: LinearGradient(
+                                colors: [Color(0xffd4b15f), Color(0xffb89443)],
                               ),
-                            );
-                          },
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        Container(
-                          width: 160,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            gradient: LinearGradient(
-                              colors: [Color(0xffd4b15f), Color(0xffb89443)],
                             ),
                           ),
+
+                          const SizedBox(height: 22),
+
+                          ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: 780),
+                            child: const Text(
+                              '"CHEM Revolution — Elite Series defines the future of high-performance nutrition. Powered by clinically validated active ingredients and precision-engineered formulations, every product is crafted to enhance strength, elevate endurance capacity, and accelerate deep cellular recovery—unlocking peak human performance. Each blend is developed through rigorous research and real-world athletic testing to ensure unmatched effectiveness. With superior bioavailability and targeted nutrient delivery, our formulas work faster, penetrate deeper, and last longer. CHEM Revolution sets a new gold standard for athletes who demand nothing less than elite-level precision and performance."',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 15,
+                                height: 1.7,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 22),
+
+                          ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              elevation: 6,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                side: BorderSide(
+                                  color: Color(0xffd4b15f),
+                                  width: 1.2,
+                                ),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 26,
+                                vertical: 12,
+                              ),
+                            ),
+                            child: const Text(
+                              "Shop Now",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                letterSpacing: 0.6,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 34),
+
+                    // ---------------- SUPPLEMENT GRID ----------------
+                    const Text(
+                      "Our Core Supplements",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xffd4b15f),
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Scientifically formulated and athlete-trusted.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: products.length,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxis,
+                          crossAxisSpacing: 18,
+                          mainAxisSpacing: 18,
+                          childAspectRatio: w < 560
+                              ? 0.80
+                              : w < 950
+                              ? 0.85
+                              : 0.95,
                         ),
+                        itemBuilder: (context, index) {
+                          final p = products[index];
 
-                        const SizedBox(height: 22),
+                          return GestureDetector(
+                            onTapDown: (_) =>
+                                setState(() => activeCard = index),
+                            onTapUp: (_) {
+                              Future.delayed(
+                                const Duration(milliseconds: 120),
+                                () => setState(() => activeCard = -1),
+                              );
 
-                        ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: 780),
-                          child: const Text(
-                            '"CHEM Revolution — Elite Series defines the future of high-performance nutrition. Powered by clinically validated active ingredients and precision-engineered formulations, every product is crafted to enhance strength, elevate endurance capacity, and accelerate deep cellular recovery—unlocking peak human performance. Each blend is developed through rigorous research and real-world athletic testing to ensure unmatched effectiveness. With superior bioavailability and targeted nutrient delivery, our formulas work faster, penetrate deeper, and last longer. CHEM Revolution sets a new gold standard for athletes who demand nothing less than elite-level precision and performance."',
+                              showProductPopup(
+                                title: p["title"],
+                                subtitle: p["subtitle"],
+                                img: p["img"],
+                                benefits: List<String>.from(p["benefits"]),
+                              );
+                            },
+                            onTapCancel: () => setState(() => activeCard = -1),
+
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 220),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.06),
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: activeCard == index
+                                      ? Color(0xffd4b15f)
+                                      : Colors.white24,
+                                  width: activeCard == index ? 2 : 1,
+                                ),
+                                boxShadow: activeCard == index
+                                    ? [
+                                        BoxShadow(
+                                          color: Color(
+                                            0xffd4b15f,
+                                          ).withOpacity(0.6),
+                                          blurRadius: 18,
+                                          spreadRadius: 1,
+                                        ),
+                                      ]
+                                    : [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.30),
+                                          blurRadius: 8,
+                                          spreadRadius: 1,
+                                        ),
+                                      ],
+                              ),
+
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: Image.asset(
+                                      "assets/images/products/${p["img"]}",
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    p["title"],
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    // ---------------- WHY CHOOSE SECTION ----------------
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        children: [
+                          const Text(
+                            "WHY CHOOSE CHEM ELITE?",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xffd4b15f),
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          Container(
+                            width: 120,
+                            height: 3,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xffd4b15f), Color(0xffb89443)],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          const Text(
+                            "High-purity ingredients\n"
+                            "Lab-tested quality\n"
+                            "Safe & effective formulations\n"
+                            "Designed for real-world athletic performance",
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: Colors.white70,
+                              height: 1.6,
                               fontSize: 15,
-                              height: 1.7,
                             ),
                           ),
-                        ),
 
-                        const SizedBox(height: 22),
+                          const SizedBox(height: 24),
 
-                        ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            elevation: 6,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                              side: BorderSide(
-                                color: Color(0xffd4b15f),
-                                width: 1.2,
-                              ),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 26,
-                              vertical: 12,
-                            ),
-                          ),
-                          child: const Text(
-                            "Shop Now",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              bool isMobile = constraints.maxWidth < 260;
 
-                  const SizedBox(height: 34),
-
-                  // ---------------- SUPPLEMENT GRID ----------------
-                  const Text(
-                    "Our Core Supplements",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Color(0xffd4b15f),
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.6,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    "Scientifically formulated and athlete-trusted.",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                  ),
-
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: products.length,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxis,
-                        crossAxisSpacing: 18,
-                        mainAxisSpacing: 18,
-                        childAspectRatio: w < 560
-                            ? 0.80
-                            : w < 950
-                            ? 0.85
-                            : 0.95,
-                      ),
-                      itemBuilder: (context, index) {
-                        final p = products[index];
-
-                        return GestureDetector(
-                          onTapDown: (_) => setState(() => activeCard = index),
-                          onTapUp: (_) {
-                            Future.delayed(
-                              const Duration(milliseconds: 120),
-                              () => setState(() => activeCard = -1),
-                            );
-
-                            showProductPopup(
-                              title: p["title"],
-                              subtitle: p["subtitle"],
-                              img: p["img"],
-                              benefits: List<String>.from(p["benefits"]),
-                            );
-                          },
-                          onTapCancel: () => setState(() => activeCard = -1),
-
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 220),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 16,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.06),
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: activeCard == index
-                                    ? Color(0xffd4b15f)
-                                    : Colors.white24,
-                                width: activeCard == index ? 2 : 1,
-                              ),
-                              boxShadow: activeCard == index
-                                  ? [
-                                      BoxShadow(
-                                        color: Color(
-                                          0xffd4b15f,
-                                        ).withOpacity(0.6),
-                                        blurRadius: 18,
-                                        spreadRadius: 1,
+                              if (isMobile) {
+                                return Column(
+                                  children: [
+                                    TextButton(
+                                      onPressed: () {},
+                                      style: TextButton.styleFrom(
+                                        backgroundColor: Colors.black,
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 22,
+                                          vertical: 12,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            26,
+                                          ),
+                                          side: BorderSide(
+                                            color: Color(0xffd4b15f),
+                                          ),
+                                        ),
                                       ),
-                                    ]
-                                  : [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.30),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
+                                      child: Text(
+                                        "Buy Now",
+                                        style: TextStyle(color: Colors.white),
                                       ),
-                                    ],
-                            ),
+                                    ),
+                                    SizedBox(height: 12),
+                                    OutlinedButton(
+                                      onPressed: () {},
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(color: Colors.white70),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 22,
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        "Contact",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
 
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Image.asset(
-                                    "assets/images/products/${p["img"]}",
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  p["title"],
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // ---------------- WHY CHOOSE SECTION ----------------
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      children: [
-                        const Text(
-                          "WHY CHOOSE CHEM ELITE?",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Color(0xffd4b15f),
-                            fontSize: 26,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-
-                        Container(
-                          width: 120,
-                          height: 3,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [Color(0xffd4b15f), Color(0xffb89443)],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        const Text(
-                          "High-purity ingredients\n"
-                          "Lab-tested quality\n"
-                          "Safe & effective formulations\n"
-                          "Designed for real-world athletic performance",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white70,
-                            height: 1.6,
-                            fontSize: 15,
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            bool isMobile = constraints.maxWidth < 260;
-
-                            if (isMobile) {
-                              return Column(
+                              // TABLET + DESKTOP
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   TextButton(
                                     onPressed: () {},
@@ -633,7 +688,7 @@ class _AboutPageState extends State<AboutPage>
                                       style: TextStyle(color: Colors.white),
                                     ),
                                   ),
-                                  SizedBox(height: 12),
+                                  SizedBox(width: 14),
                                   OutlinedButton(
                                     onPressed: () {},
                                     style: OutlinedButton.styleFrom(
@@ -650,73 +705,114 @@ class _AboutPageState extends State<AboutPage>
                                   ),
                                 ],
                               );
-                            }
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
 
-                            // TABLET + DESKTOP
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                TextButton(
-                                  onPressed: () {},
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: Colors.black,
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 22,
-                                      vertical: 12,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(26),
-                                      side: BorderSide(
-                                        color: Color(0xffd4b15f),
-                                      ),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    "Buy Now",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                                SizedBox(width: 14),
-                                OutlinedButton(
-                                  onPressed: () {},
-                                  style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: Colors.white70),
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 22,
-                                      vertical: 12,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    "Contact",
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
+                    const SizedBox(height: 30),
+                    Footer(
+                      logo: FooterLogo(
+                        image: Image.asset(
+                          'assets/icons/chemo.png',
+                          fit: BoxFit.contain,
+                        ),
+                        onTapUrl: "https://chemrevolutions.com",
+                      ),
+                      socialLinks: [
+                        SocialLink(
+                          icon: FontAwesomeIcons.instagram,
+                          url: 'https://instagram.com',
+                        ),
+                        SocialLink(
+                          icon: FontAwesomeIcons.facebookF,
+                          url: 'https://facebook.com',
+                        ),
+                        SocialLink(
+                          icon: FontAwesomeIcons.twitter,
+                          url: 'https://twitter.com',
                         ),
                       ],
-                    ),
-                  ),
+                      columns: [
+                        FooterColumn(
+                          title: 'QUICK LINKS',
+                          items: [
+                            FooterItem(label: 'Home'),
+                            FooterItem(label: 'Categories'),
+                            FooterItem(label: 'Product Detail'),
+                            FooterItem(label: 'Contact Us'),
+                          ],
+                        ),
+                        FooterColumn(
+                          title: 'CUSTOMER SERVICE',
+                          items: [
+                            FooterItem(
+                              label: 'My Account',
+                              url: "https://chemrevolutions.com/account",
+                            ),
+                            FooterItem(
+                              label: 'Order Status',
+                              url: "https://chemrevolutions.com/orders",
+                            ),
+                            FooterItem(
+                              label: 'Wishlist',
+                              url: "https://chemrevolutions.com/wishlist",
+                            ),
+                          ],
+                        ),
+                        FooterColumn(
+                          title: 'INFORMATION',
+                          items: [
+                            FooterItem(
+                              label: 'About Us',
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const AboutPage(),
+                                  ),
+                                );
+                              },
+                            ),
 
-                  const SizedBox(height: 30),
-
-                  // FOOTER
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    width: double.infinity,
-                    color: Colors.black,
-                    child: const Text(
-                      "© 2025 CHEM Revolution – Elite Series",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white60, fontSize: 13),
+                            FooterItem(
+                              label: 'Privacy Policy',
+                              url: "https://chemrevolutions.com/privacy",
+                            ),
+                            FooterItem(
+                              label: 'Data Collection',
+                              url: "https://chemrevolutions.com/data",
+                            ),
+                          ],
+                        ),
+                        FooterColumn(
+                          title: 'POLICIES',
+                          items: [
+                            FooterItem(
+                              label: 'Privacy Policy',
+                              url: "https://chemrevolutions.com/privacy",
+                            ),
+                            FooterItem(
+                              label: 'Data Collection',
+                              url: "https://chemrevolutions.com/data",
+                            ),
+                            FooterItem(
+                              label: 'Terms & Conditions',
+                              url: "https://chemrevolutions.com/terms",
+                            ),
+                          ],
+                        ),
+                      ],
+                      copyright:
+                          "© 2025 ChemRevolutions.com. All rights reserved.",
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
