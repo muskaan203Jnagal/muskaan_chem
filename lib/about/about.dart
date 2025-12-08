@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:chem_revolutions/header.dart';
 
 void main() {
   runApp(
@@ -257,7 +258,8 @@ class _AboutPageState extends State<AboutPage>
         ? 2
         : 4; // responsive grid
 
-    return Scaffold(
+    return AppScaffold(
+      currentPage: 'ABOUT',
       body: Stack(
         children: [
           // BACKGROUND

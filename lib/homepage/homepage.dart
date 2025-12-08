@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+
 // Import Product model
 import 'package:chem_revolutions/models/product.dart';
 
@@ -22,7 +23,9 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final productsCollection = FirebaseFirestore.instance.collection("products");
+    final productsCollection = FirebaseFirestore.instance.collection(
+      "products",
+    );
 
     return AppScaffold(
       currentPage: 'HOME',
