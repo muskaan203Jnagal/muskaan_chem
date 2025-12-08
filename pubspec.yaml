@@ -28,5 +28,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
   assets:
-  - assets/icons/google_logo.png
+    - assets/icons/
+    - assets/images/
+    - assets/images/products/
+    - assets/icons/google_logo.png
+    - assets/icons/chemo.png
