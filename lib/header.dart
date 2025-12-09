@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:chem_revolutions/homepage/homepage.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // Main reusable widget that wraps your pages with header and drawer
@@ -102,150 +104,142 @@ class _AppScaffoldState extends State<AppScaffold>
     }
   }
 
-  Widget _buildDrawer() {
-    return Container(
-      height: double.infinity,
-      width: double.infinity,
-      color: Colors.black,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with close button
-            Container(
-              padding: const EdgeInsets.all(20),
-              color: Colors.black,
-              child: Row(
-                children: [
-                  Image.asset(
-                    'assets/icons/chemo.png',
-                    height: 42,
-                    fit: BoxFit.contain,
-                    errorBuilder: (c, e, s) => const Icon(
-                      Icons.image,
-                      color: Colors.white,
-                      size: 36,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'CHEM Revolution',
-                      style: GoogleFonts.montserrat(
-                        color: const Color(0xFFD4AF37),
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: _toggleDrawer,
-                    child: const Icon(
-                      Icons.close,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const Divider(color: Colors.white24, height: 1),
-
-            // Scrollable navigation items
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildDrawerItem(
-                      'HOME',
-                      Icons.home_outlined,
-                      isActive: widget.currentPage == 'HOME',
-                      onTap: () => _navigateToPage('HOME'),
-                    ),
-                    _buildDrawerItem(
-                      'ABOUT',
-                      Icons.info_outline,
-                      isActive: widget.currentPage == 'ABOUT',
-                      onTap: () => _navigateToPage('ABOUT'),
-                    ),
-                    _buildDrawerItem(
-                      'GET VERIFIED',
-                      Icons.verified_user_outlined,
-                      isActive: widget.currentPage == 'GETVERIFIED',
-                      onTap: () => _navigateToPage('GETVERIFIED'),
-                    ),
-                    _buildDrawerItem(
-                      'PRODUCTS',
-                      Icons.shopping_bag_outlined,
-                      isActive: widget.currentPage == 'PRODUCTS',
-                      onTap: () => _navigateToPage('PRODUCTS'),
-                    ),
-
-                    const Divider(color: Colors.white24, height: 1),
-
-                    _buildDrawerItem(
-                      'PROFILE',
-                      Icons.person_outline,
-                      onTap: () {
-                        _toggleDrawer();
-                      },
-                    ),
-
-                    const Divider(color: Colors.white24, height: 1),
-                  ],
-                ),
-              ),
-            ),
-
-            // Bottom section with CHEM Revolution logo and social icons
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.black,
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withOpacity(0.1),
-                    width: 1,
+ Widget _buildDrawer() {
+  return Container(
+    height: double.infinity,
+    width: double.infinity,
+    color: Colors.black,
+    child: SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with close button
+          Container(
+            padding: const EdgeInsets.all(20),
+            color: Colors.black,
+            child: Row(
+              children: [
+                Image.asset(
+                  'assets/icons/chemo.png',
+                  height: 42,
+                  fit: BoxFit.contain,
+                  errorBuilder: (c, e, s) => const Icon(
+                    Icons.image,
+                    color: Colors.white,
+                    size: 36,
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'CHEM Revolution',
+                    style: TextStyle(
+                      color: Color(0xFFD4AF37),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: _toggleDrawer,
+                  child: const Icon(
+                    Icons.close,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(color: Colors.white24, height: 1),
+
+          // Scrollable navigation items
+          Expanded(
+            child: SingleChildScrollView(
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Image.asset(
-                    'assets/icons/chemo.png',
-                    height: 120,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.image,
-                        color: Colors.white,
-                        size: 60,
-                      );
+                  _buildDrawerItem(
+                    'HOME',
+                    Icons.home_outlined,
+                    isActive: widget.currentPage == 'HOME',
+                    onTap: () => _navigateToPage('HOME'),
+                  ),
+                  _buildDrawerItem(
+                    'ABOUT',
+                    Icons.info_outline,
+                    isActive: widget.currentPage == 'ABOUT',
+                    onTap: () => _navigateToPage('ABOUT'),
+                  ),
+                  _buildDrawerItem(
+                    'GET VERIFIED',
+                    Icons.verified_user_outlined,
+                    isActive: widget.currentPage == 'GETVERIFIED',
+                    onTap: () => _navigateToPage('GETVERIFIED'),
+                  ),
+                  _buildDrawerItem(
+                    'PRODUCTS',
+                    Icons.shopping_bag_outlined,
+                    isActive: widget.currentPage == 'PRODUCTS',
+                    onTap: () => _navigateToPage('PRODUCTS'),
+                  ),
+
+                  const Divider(color: Colors.white24, height: 1),
+
+                  _buildDrawerItem(
+                    'PROFILE',
+                    Icons.person_outline,
+                    onTap: () {
+                      _toggleDrawer();
                     },
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildSocialIcon(icon: Icons.wechat, onTap: () {}),
-                      const SizedBox(width: 15),
-                      _buildSocialIcon(icon: Icons.facebook, onTap: () {}),
-                      const SizedBox(width: 15),
-                      _buildSocialIcon(icon: Icons.camera_alt, onTap: () {}),
-                    ],
-                  ),
+
+                  const Divider(color: Colors.white24, height: 1),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
+          ),
 
-  Widget _buildSocialIcon({required IconData icon, VoidCallback? onTap}) {
+          // Bottom section with logo and social icons
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              border: Border(
+                top: BorderSide(
+                  color: Colors.white.withOpacity(0.1),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Logo
+                Image.asset(
+                  'assets/icons/chemo.png',
+                  height: 120,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.image, color: Colors.white, size: 60);
+                  },
+                ),
+                const SizedBox(width: 24),
+                // Social icons
+                _buildSocialIcon(icon: FontAwesomeIcons.instagram, onTap: () {}),
+                const SizedBox(width: 12),
+                _buildSocialIcon(icon: Icons.facebook, onTap: () {}),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+ Widget _buildSocialIcon({required IconData icon, VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
