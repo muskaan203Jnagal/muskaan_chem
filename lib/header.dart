@@ -220,7 +220,7 @@ class _AppScaffoldState extends State<AppScaffold>
                 // Logo
                 Image.asset(
                   'assets/icons/chemo.png',
-                  height: 120,
+                  height: 120, // Drawer bottom logo height
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     return const Icon(Icons.image, color: Colors.white, size: 60);
@@ -495,15 +495,16 @@ class _AppHeaderState extends State<AppHeader> {
             Positioned(
               left: 60,
               right: 0,
-              top: -60,
+              // *** ADJUSTMENT FOR DESKTOP LOGO VERTICAL POSITION ***
+              top: -46, // Changed from -60 to -10 to bring it down
               child: Center(
                 child: Image.asset(
                   'assets/icons/chemo.png',
-                  height: 230,
+                  height: 200, // Logo size remains 200
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     return const SizedBox(
-                      height: 230,
+                      height: 200,
                       child: Icon(Icons.image, size: 50, color: Colors.white),
                     );
                   },
@@ -514,17 +515,18 @@ class _AppHeaderState extends State<AppHeader> {
           // Mobile logo
           if (!_isSearchActive && isMobile)
             Positioned(
-              left: 0,
+              left: 20,
               right: 0,
-              top: -30,
+              // *** ADJUSTMENT FOR MOBILE LOGO VERTICAL POSITION ***
+              top: -15, // Changed from -30 to 10 to bring it down
               child: Center(
                 child: Image.asset(
                   'assets/icons/chemo.png',
-                  height: 140,
+                  height: 120, // Logo size remains 120
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
                     return const SizedBox(
-                      height: 140,
+                      height: 120,
                       child: Icon(Icons.image, size: 40, color: Colors.white),
                     );
                   },

@@ -292,6 +292,7 @@ class Footer extends StatelessWidget {
                 Text(
                   "Follow Us",
                   style: GoogleFonts.montserrat(
+                    color: Colors.white, // FIX: Explicitly set to white
                     fontSize: isCentered ? 14 : 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -327,6 +328,7 @@ class Footer extends StatelessWidget {
           column.title,
           textAlign: TextAlign.center,
           style: GoogleFonts.montserrat(
+            color: Colors.white, // FIX: Explicitly set to white to resolve the greyish color issue
             fontWeight: FontWeight.bold,
             fontSize: isMobile ? 14 : 16,
           ),
@@ -464,4 +466,13 @@ Future<void> _openUrl(String url) async {
   final uri = Uri.parse(url);
   if (!await canLaunchUrl(uri)) return;
   await launchUrl(uri, mode: LaunchMode.externalApplication);
+}
+
+void main() {
+  // It is recommended to initialize Flutter bindings before running the app
+  // if you might need to load assets or perform platform-specific calls early.
+  // Although not strictly necessary for this simple example, it's good practice.
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  runApp(const MyFooter());
 }
