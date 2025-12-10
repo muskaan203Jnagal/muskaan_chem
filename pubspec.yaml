@@ -32,3 +32,14 @@ flutter:
   assets:
   - assets/icons/google_logo.png
   - assets/icons/chemo.png
+
+  fonts:
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat-Regular.ttf
+        - asset: assets/fonts/Montserrat-Italic.ttf
+          style: italic
+        - asset: assets/fonts/Montserrat-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Montserrat-Black.ttf # Corresponds to w900/w800 used in code
+          weight: 900
