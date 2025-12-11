@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:chem_revolutions/homepage/homepage.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:chem_revolutions/about/about.dart';
 
@@ -121,11 +121,11 @@ class _AppScaffoldState extends State<AppScaffold>
                         const Icon(Icons.image, color: Colors.white, size: 36),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'CHEM Revolution',
-                      style: TextStyle(
-                        color: Color(0xFFD4AF37),
+                      style: GoogleFonts.montserrat(
+                        color: const Color(0xFFD4AF37),
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),
@@ -283,7 +283,7 @@ class _AppScaffoldState extends State<AppScaffold>
               const SizedBox(width: 14),
               Text(
                 text,
-                style: TextStyle(
+                style: GoogleFonts.montserrat(
                   color: isActive ? const Color(0xFFD4AF37) : Colors.white,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -325,7 +325,7 @@ class _AppScaffoldState extends State<AppScaffold>
                       child: Text(
                         _messages[_currentIndex],
                         key: ValueKey<int>(_currentIndex),
-                        style: const TextStyle(
+                        style: GoogleFonts.montserrat(
                           color: Colors.black,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -546,10 +546,13 @@ class _AppHeaderState extends State<AppHeader> {
                   child: TextField(
                     controller: _searchController,
                     autofocus: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Search products...',
-                      hintStyle: TextStyle(
+                      hintStyle: GoogleFonts.montserrat(
                         color: Colors.white.withOpacity(0.5),
                         fontSize: 14,
                       ),
@@ -617,10 +620,13 @@ class _AppHeaderState extends State<AppHeader> {
                   child: TextField(
                     controller: _searchController,
                     autofocus: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                    style: GoogleFonts.montserrat(
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Search products...',
-                      hintStyle: TextStyle(
+                      hintStyle: GoogleFonts.montserrat(
                         color: Colors.white.withOpacity(0.5),
                         fontSize: 16,
                       ),
@@ -736,7 +742,7 @@ class _AppHeaderState extends State<AppHeader> {
                 const SizedBox(width: 8),
                 Text(
                   entry.key,
-                  style: const TextStyle(
+                  style: GoogleFonts.montserrat(
                     color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -773,7 +779,7 @@ class _AppHeaderState extends State<AppHeader> {
             SizedBox(width: isMobile ? 6 : 8),
             Text(
               _selectedCountry,
-              style: TextStyle(
+              style: GoogleFonts.montserrat(
                 color: Colors.white,
                 fontSize: isMobile ? 12 : 14,
                 fontWeight: FontWeight.w600,
@@ -816,7 +822,7 @@ class _NavLinkState extends State<_NavLink> {
         onTap: widget.onTap ?? () {},
         child: Text(
           widget.text,
-          style: TextStyle(
+          style: GoogleFonts.montserrat(
             color: widget.isActive || _isHovered
                 ? const Color(0xFFD4AF37)
                 : Colors.white,
