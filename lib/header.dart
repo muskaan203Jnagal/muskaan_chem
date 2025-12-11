@@ -2,21 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:chem_revolutions/homepage/homepage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:'
+import 'package:chem_revolutions/about/about.dart';
+
 // Responsive breakpoints
 class ResponsiveBreakpoints {
   static const double mobile = 768;
   static const double tablet = 1024;
-  
-  static bool isMobile(BuildContext context) => 
+
+  static bool isMobile(BuildContext context) =>
       MediaQuery.of(context).size.width < mobile;
-  
+
   static bool isTablet(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     return width >= mobile && width < tablet;
   }
-  
-  static bool isDesktop(BuildContext context) => 
+
+  static bool isDesktop(BuildContext context) =>
       MediaQuery.of(context).size.width >= tablet;
 }
 
@@ -282,16 +283,9 @@ class _AppScaffoldState extends State<AppScaffold>
         padding: EdgeInsets.all(isTablet ? 12 : 10),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white.withOpacity(0.3),
-            width: 1,
-          ),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
         ),
-        child: Icon(
-          icon,
-          color: Colors.white,
-          size: isTablet ? 26 : 24,
-        ),
+        child: Icon(icon, color: Colors.white, size: isTablet ? 26 : 24),
       ),
     );
   }
@@ -791,21 +785,14 @@ class _AppHeaderState extends State<AppHeader> {
                 _searchController.clear();
               });
             },
-            child: Icon(
-              Icons.close,
-              color: Colors.white,
-              size: closeIconSize,
-            ),
+            child: Icon(Icons.close, color: Colors.white, size: closeIconSize),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildCountryDropdown({
-    bool isMobile = false,
-    bool isTablet = false,
-  }) {
+  Widget _buildCountryDropdown({bool isMobile = false, bool isTablet = false}) {
     final horizontalPadding = isMobile ? 8.0 : (isTablet ? 10.0 : 12.0);
     final verticalPadding = isMobile ? 4.0 : (isTablet ? 6.0 : 8.0);
     final flagWidth = isMobile ? 16.0 : (isTablet ? 18.0 : 20.0);
@@ -950,9 +937,9 @@ class _IconButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback? onTap;
   final double? size; // Add size parameter
-  
+
   const _IconButton({
-    required this.icon, 
+    required this.icon,
     this.onTap,
     this.size, // Add to constructor
   });
