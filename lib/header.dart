@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:chem_revolutions/homepage/homepage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:chem_revolutions/about/about.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:chem_revolutions/client-suite/signup.dart';
+import 'package:chem_revolutions/client-suite/my-account-dashboard.dart';
 
 // Responsive breakpoints
 class ResponsiveBreakpoints {
@@ -100,9 +102,7 @@ class _AppScaffoldState extends State<AppScaffold>
       _drawerAnimationController?.reverse();
     }
   }
-
   void _navigateToPage(String page) {
-    // Close drawer first
     if (_isDrawerOpen) {
       setState(() {
         _isDrawerOpen = false;
@@ -110,7 +110,6 @@ class _AppScaffoldState extends State<AppScaffold>
       _drawerAnimationController?.reverse();
     }
 
-    // Navigate if different page
     if (widget.currentPage != page) {
       Navigator.pushReplacementNamed(context, '/${page.toLowerCase()}');
     }
@@ -119,13 +118,12 @@ class _AppScaffoldState extends State<AppScaffold>
   Widget _buildDrawer(bool isTablet) {
     return Container(
       height: double.infinity,
-      width: isTablet ? 400 : double.infinity, // Fixed width for tablet
+      width: isTablet ? 400 : double.infinity,
       color: Colors.black,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with close button
             Container(
               padding: EdgeInsets.all(isTablet ? 24 : 20),
               color: Colors.black,
@@ -135,11 +133,6 @@ class _AppScaffoldState extends State<AppScaffold>
                     'assets/icons/chemo.png',
                     height: isTablet ? 48 : 42,
                     fit: BoxFit.contain,
-                    errorBuilder: (c, e, s) => Icon(
-                      Icons.image,
-                      color: Colors.white,
-                      size: isTablet ? 40 : 36,
-                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -166,7 +159,6 @@ class _AppScaffoldState extends State<AppScaffold>
 
             const Divider(color: Colors.white24, height: 1),
 
-            // Scrollable navigation items
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -207,7 +199,16 @@ class _AppScaffoldState extends State<AppScaffold>
                       'PROFILE',
                       Icons.person_outline,
                       onTap: () {
+                        final user = FirebaseAuth.instance.currentUser;
                         _toggleDrawer();
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => user == null
+                                ? const ClientSignupPage()
+                                : const MyAccountDashboard(),
+                          ),
+                        );
                       },
                       isTablet: isTablet,
                     ),
@@ -218,7 +219,6 @@ class _AppScaffoldState extends State<AppScaffold>
               ),
             ),
 
-            // Bottom section with logo and social icons
             Container(
               padding: EdgeInsets.symmetric(
                 vertical: isTablet ? 24 : 20,
@@ -235,33 +235,11 @@ class _AppScaffoldState extends State<AppScaffold>
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Logo
                   Image.asset(
                     'assets/icons/chemo.png',
                     height: isTablet ? 140 : 120,
                     fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Icon(
-                        Icons.image,
-                        color: Colors.white,
-                        size: isTablet ? 70 : 60,
-                      );
-                    },
-                  ),
-                  SizedBox(width: isTablet ? 28 : 24),
-                  // Social icons
-                  _buildSocialIcon(
-                    icon: FontAwesomeIcons.instagram,
-                    onTap: () {},
-                    isTablet: isTablet,
-                  ),
-                  SizedBox(width: isTablet ? 16 : 12),
-                  _buildSocialIcon(
-                    icon: Icons.facebook,
-                    onTap: () {},
-                    isTablet: isTablet,
                   ),
                 ],
               ),
@@ -272,20 +250,91 @@ class _AppScaffoldState extends State<AppScaffold>
     );
   }
 
-  Widget _buildSocialIcon({
-    required IconData icon,
-    VoidCallback? onTap,
-    bool isTablet = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(isTablet ? 12 : 10),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-        ),
-        child: Icon(icon, color: Colors.white, size: isTablet ? 26 : 24),
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = ResponsiveBreakpoints.isMobile(context);
+    final isTablet = ResponsiveBreakpoints.isTablet(context);
+    final isDesktop = ResponsiveBreakpoints.isDesktop(context);
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Container(
+                  height: isTablet ? 44 : 40,
+                  color: const Color(0xFFB8860B),
+                  child: Center(
+                    child: Text(
+                      _messages[_currentIndex],
+                      style: GoogleFonts.montserrat(
+                        color: Colors.black,
+                        fontSize: isTablet ? 13 : 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _StickyHeaderDelegate(
+                  child: AppHeader(
+                    onMenuTap: _toggleDrawer,
+                    currentPage: widget.currentPage,
+                    onNavigate: _navigateToPage,
+                  ),
+                  isMobile: isMobile,
+                  isTablet: isTablet,
+                ),
+              ),
+
+              SliverFillRemaining(
+                child: widget.body,
+              ),
+            ],
+          ),
+
+          if ((isMobile || isTablet) &&
+              _drawerAnimationController != null)
+            Positioned.fill(
+              child: IgnorePointer(
+                ignoring: !_isDrawerOpen,
+                child: AnimatedBuilder(
+                  animation: _drawerAnimationController!,
+                  builder: (context, child) {
+                    final dy = _drawerSlideAnimation!.value *
+                        MediaQuery.of(context).size.height;
+                    final scrimOpacity =
+                        _drawerAnimationController!.value * 0.7;
+
+                    return Stack(
+                      children: [
+                        if (_drawerAnimationController!.value > 0)
+                          Positioned.fill(
+                            child: Opacity(
+                              opacity: scrimOpacity,
+                              child: GestureDetector(
+                                onTap: _toggleDrawer,
+                                child: Container(color: Colors.black),
+                              ),
+                            ),
+                          ),
+                        Transform.translate(
+                          offset: Offset(0, dy),
+                          child: _buildDrawer(isTablet),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -337,126 +386,6 @@ class _AppScaffoldState extends State<AppScaffold>
       ),
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    final isMobile = ResponsiveBreakpoints.isMobile(context);
-    final isTablet = ResponsiveBreakpoints.isTablet(context);
-    final isDesktop = ResponsiveBreakpoints.isDesktop(context);
-
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Main content with header
-          CustomScrollView(
-            slivers: [
-              // Top message bar
-              SliverToBoxAdapter(
-                child: Container(
-                  height: isTablet ? 44 : (isMobile ? 40 : 40),
-                  color: const Color(0xFFB8860B),
-                  child: Center(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 500),
-                      transitionBuilder:
-                          (Widget child, Animation<double> animation) {
-                            return FadeTransition(
-                              opacity: animation,
-                              child: child,
-                            );
-                          },
-                      child: Text(
-                        _messages[_currentIndex],
-                        key: ValueKey<int>(_currentIndex),
-                        style: GoogleFonts.montserrat(
-                          color: Colors.black,
-                          fontSize: isTablet ? 13 : 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.0,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-
-              // Sticky header
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: _StickyHeaderDelegate(
-                  child: AppHeader(
-                    onMenuTap: _toggleDrawer,
-                    currentPage: widget.currentPage,
-                    onNavigate: _navigateToPage,
-                  ),
-                  isMobile: isMobile,
-                  isTablet: isTablet,
-                ),
-              ),
-
-              // Page body content
-              SliverFillRemaining(child: widget.body),
-            ],
-          ),
-
-          // Drawer overlay for mobile and tablet
-          if ((isMobile || isTablet) &&
-              _drawerSlideAnimation != null &&
-              _drawerAnimationController != null)
-            Positioned.fill(
-              child: IgnorePointer(
-                ignoring: !_isDrawerOpen,
-                child: AnimatedBuilder(
-                  animation: _drawerAnimationController!,
-                  builder: (context, child) {
-                    final screenHeight = MediaQuery.of(context).size.height;
-                    final dy = _drawerSlideAnimation!.value * screenHeight;
-                    final scrimOpacity =
-                        _drawerAnimationController!.value * 0.7;
-
-                    return Stack(
-                      children: [
-                        if (_drawerAnimationController!.value > 0)
-                          Positioned.fill(
-                            child: Opacity(
-                              opacity: scrimOpacity,
-                              child: GestureDetector(
-                                onTap: _toggleDrawer,
-                                behavior: HitTestBehavior.opaque,
-                                child: Container(color: Colors.black),
-                              ),
-                            ),
-                          ),
-                        // For tablet, align drawer to the right
-                        if (isTablet)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            bottom: 0,
-                            child: Transform.translate(
-                              offset: Offset(
-                                400 * (1 - _drawerAnimationController!.value),
-                                0,
-                              ),
-                              child: _buildDrawer(true),
-                            ),
-                          )
-                        else
-                          Transform.translate(
-                            offset: Offset(0, dy),
-                            child: _buildDrawer(false),
-                          ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }
 
 class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
@@ -474,7 +403,7 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get minExtent => isMobile ? 80 : (isTablet ? 90 : 100);
 
   @override
-  double get maxExtent => isMobile ? 80 : (isTablet ? 90 : 100);
+  double get maxExtent => minExtent;
 
   @override
   Widget build(
@@ -509,12 +438,6 @@ class _AppHeaderState extends State<AppHeader> {
   String _selectedCountry = 'US';
   bool _isSearchActive = false;
   final TextEditingController _searchController = TextEditingController();
-
-  final Map<String, String> _countries = {
-    'US': 'https://flagcdn.com/w40/us.png',
-    'IND': 'https://flagcdn.com/w40/in.png',
-    'UK': 'https://flagcdn.com/w40/gb.png',
-  };
 
   @override
   void dispose() {
@@ -556,7 +479,6 @@ class _AppHeaderState extends State<AppHeader> {
             ),
           ),
 
-          // Logo positioning
           if (!_isSearchActive)
             Positioned(
               left: isTablet ? 40 : (isDesktop ? 60 : 20),
@@ -567,16 +489,6 @@ class _AppHeaderState extends State<AppHeader> {
                   'assets/icons/chemo.png',
                   height: isTablet ? 160 : (isDesktop ? 200 : 120),
                   fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return SizedBox(
-                      height: isTablet ? 160 : (isDesktop ? 200 : 120),
-                      child: Icon(
-                        Icons.image,
-                        size: isTablet ? 45 : (isDesktop ? 50 : 40),
-                        color: Colors.white,
-                      ),
-                    );
-                  },
                 ),
               ),
             ),
@@ -595,16 +507,31 @@ class _AppHeaderState extends State<AppHeader> {
                 children: [
                   _IconButton(icon: Icons.menu, onTap: widget.onMenuTap),
                   const SizedBox(width: 12),
-                  _buildCountryDropdown(isMobile: true),
                 ],
               ),
-              const Spacer(),
               Row(
                 children: [
                   _IconButton(
                     icon: Icons.search,
                     onTap: () => setState(() => _isSearchActive = true),
                   ),
+                  const SizedBox(width: 12),
+
+                  _IconButton(
+                    icon: Icons.person_outline,
+                    onTap: () {
+                      final user = FirebaseAuth.instance.currentUser;
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => user == null
+                              ? const ClientSignupPage()
+                              : const MyAccountDashboard(),
+                        ),
+                      );
+                    },
+                  ),
+
                   const SizedBox(width: 12),
                   const _IconButton(icon: Icons.shopping_cart_outlined),
                 ],
@@ -638,6 +565,7 @@ class _AppHeaderState extends State<AppHeader> {
                     text: 'ABOUT',
                     isActive: widget.currentPage == 'ABOUT',
                     onTap: () => widget.onNavigate('ABOUT'),
+                   
                     fontSize: 13,
                   ),
                   const SizedBox(width: 28),
@@ -649,18 +577,31 @@ class _AppHeaderState extends State<AppHeader> {
                   ),
                 ],
               ),
-              const Spacer(),
               Row(
                 children: [
-                  _buildCountryDropdown(isTablet: true),
-                  const SizedBox(width: 24),
                   _IconButton(
                     icon: Icons.search,
                     onTap: () => setState(() => _isSearchActive = true),
                     size: 25,
                   ),
                   const SizedBox(width: 20),
-                  const _IconButton(icon: Icons.person_outline, size: 25),
+
+                  _IconButton(
+                    icon: Icons.person_outline,
+                    size: 25,
+                    onTap: () {
+                      final user = FirebaseAuth.instance.currentUser;
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => user == null
+                              ? const ClientSignupPage()
+                              : const MyAccountDashboard(),
+                        ),
+                      );
+                    },
+                  ),
+
                   const SizedBox(width: 20),
                   const _IconButton(
                     icon: Icons.shopping_cart_outlined,
@@ -685,16 +626,13 @@ class _AppHeaderState extends State<AppHeader> {
                     isActive: widget.currentPage == 'HOME',
                     onTap: () => widget.onNavigate('HOME'),
                   ),
+                      
+                  
                   const SizedBox(width: 40),
-                  _NavLink(
+                    _NavLink(
                     text: 'ABOUT',
                     isActive: widget.currentPage == 'ABOUT',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AboutPage()),
-                      );
-                    },
+                    onTap: () => widget.onNavigate('ABOUT'),
                   ),
 
                   const SizedBox(width: 40),
@@ -711,17 +649,29 @@ class _AppHeaderState extends State<AppHeader> {
                   ),
                 ],
               ),
-              const Spacer(),
               Row(
                 children: [
-                  _buildCountryDropdown(isMobile: false),
-                  const SizedBox(width: 40),
                   _IconButton(
                     icon: Icons.search,
                     onTap: () => setState(() => _isSearchActive = true),
                   ),
                   const SizedBox(width: 30),
-                  const _IconButton(icon: Icons.person_outline),
+
+                  _IconButton(
+                    icon: Icons.person_outline,
+                    onTap: () {
+                      final user = FirebaseAuth.instance.currentUser;
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => user == null
+                              ? const ClientSignupPage()
+                              : const MyAccountDashboard(),
+                        ),
+                      );
+                    },
+                  ),
+
                   const SizedBox(width: 30),
                   const _IconButton(icon: Icons.shopping_cart_outlined),
                 ],
@@ -791,104 +741,9 @@ class _AppHeaderState extends State<AppHeader> {
       ],
     );
   }
-
-  Widget _buildCountryDropdown({bool isMobile = false, bool isTablet = false}) {
-    final horizontalPadding = isMobile ? 8.0 : (isTablet ? 10.0 : 12.0);
-    final verticalPadding = isMobile ? 4.0 : (isTablet ? 6.0 : 8.0);
-    final flagWidth = isMobile ? 16.0 : (isTablet ? 18.0 : 20.0);
-    final flagHeight = isMobile ? 12.0 : (isTablet ? 13.0 : 14.0);
-    final fontSize = isMobile ? 12.0 : (isTablet ? 13.0 : 14.0);
-    final spacing = isMobile ? 6.0 : (isTablet ? 7.0 : 8.0);
-    final iconSize = isMobile ? 16.0 : (isTablet ? 17.0 : 18.0);
-
-    return PopupMenuButton<String>(
-      onSelected: (String value) {
-        setState(() {
-          _selectedCountry = value;
-        });
-      },
-      offset: const Offset(0, 45),
-      color: Colors.black,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: Colors.white, width: 1),
-      ),
-      itemBuilder: (BuildContext context) {
-        return _countries.entries.map((entry) {
-          return PopupMenuItem<String>(
-            value: entry.key,
-            child: Row(
-              children: [
-                Container(
-                  width: flagWidth,
-                  height: flagHeight,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: NetworkImage(entry.value),
-                      fit: BoxFit.cover,
-                    ),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  entry.key,
-                  style: GoogleFonts.montserrat(
-                    color: Colors.white,
-                    fontSize: fontSize,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList();
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: horizontalPadding,
-          vertical: verticalPadding,
-        ),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.white, width: 2),
-          borderRadius: BorderRadius.circular(25),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: flagWidth,
-              height: flagHeight,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(_countries[_selectedCountry]!),
-                  fit: BoxFit.cover,
-                ),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            SizedBox(width: spacing),
-            Text(
-              _selectedCountry,
-              style: GoogleFonts.montserrat(
-                color: Colors.white,
-                fontSize: fontSize,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(width: spacing - 2),
-            Icon(
-              Icons.keyboard_arrow_down,
-              color: Colors.white,
-              size: iconSize,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
+// NavLink
 class _NavLink extends StatefulWidget {
   final String text;
   final bool isActive;
@@ -933,15 +788,16 @@ class _NavLinkState extends State<_NavLink> {
   }
 }
 
+// Icon Button
 class _IconButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback? onTap;
-  final double? size; // Add size parameter
+  final double? size;
 
   const _IconButton({
     required this.icon,
     this.onTap,
-    this.size, // Add to constructor
+    this.size,
   });
 
   @override
@@ -962,7 +818,7 @@ class _IconButtonState extends State<_IconButton> {
         child: Icon(
           widget.icon,
           color: _isHovered ? const Color(0xFFD4AF37) : Colors.white,
-          size: widget.size ?? 24, // Use the size parameter with default of 24
+          size: widget.size ?? 24,
         ),
       ),
     );

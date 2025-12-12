@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-
-// import your header (AppScaffold) and footer (Footer) files
 import 'package:chem_revolutions/header.dart';
-import 'package:chem_revolutions/footer.dart'; // <-- adjust path if needed
+import 'package:chem_revolutions/footer.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class PolicyPageB extends StatefulWidget {
   const PolicyPageB({super.key});
@@ -23,7 +22,7 @@ class _PolicyPageBState extends State<PolicyPageB> {
     "Cookies Policy",
     "Privacy Policy",
     "Shipping Policy",
-    "Contact Us"
+    "Contact Us",
   ];
 
   final List<Widget> content = [
@@ -74,7 +73,7 @@ class _PolicyPageBState extends State<PolicyPageB> {
         SizedBox(height: 8),
         Text("Address: Model Town, Jalandhar, Punjab"),
       ],
-    )
+    ),
   ];
 
   @override
@@ -85,83 +84,126 @@ class _PolicyPageBState extends State<PolicyPageB> {
 
   @override
   Widget build(BuildContext context) {
-    // Wrap the whole page inside your AppScaffold so header/drawer works
     return AppScaffold(
       currentPage: 'POLICY',
-      body: _buildPageContent(context),
-    );
-  }
+      body: Container(
+        color: const Color(0xFFF7F8FA),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final screenWidth = constraints.maxWidth;
+            final isMobile = screenWidth < 800;
 
-  // builds the page content that will be put into the AppScaffold's body
-  Widget _buildPageContent(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final screenWidth = constraints.maxWidth;
-        final screenHeight = constraints.maxHeight;
-        final isMobile = screenWidth < 800;
+            final sidebarWidth = (screenWidth * 0.25).clamp(220.0, 300.0);
+            final contentPadding = (screenWidth * 0.04).clamp(15.0, 35.0);
 
-        // responsive sizes
-        final headerPaddingVertical = (screenHeight * 0.05).clamp(30.0, 55.0);
-        final sidebarWidth = (screenWidth * 0.25).clamp(220.0, 300.0);
-        final contentPadding = (screenWidth * 0.04).clamp(15.0, 35.0);
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    controller: scrollController,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        isMobile
+                            ? _buildMobileView(contentPadding)
+                            : _buildDesktopView(sidebarWidth, contentPadding),
 
-        return Column(
-          children: [
-            // header area (page header inside body)
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: headerPaddingVertical),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.black, Color(0xFF222222)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+                        const SizedBox(height: 40),
+
+                        Theme(
+                          data: ThemeData.dark().copyWith(
+                            textTheme: ThemeData.dark().textTheme.apply(
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                          child: ColoredBox(
+                            color: const Color.fromARGB(255, 8, 8, 8),
+                            child: Footer(
+                              logo: FooterLogo(
+                                image: Image.asset(
+                                  'assets/icons/chemo.png',
+                                  fit: BoxFit.contain,
+                                ),
+                                onTapUrl: "https://chemrevolutions.com",
+                              ),
+                              socialLinks: [
+                                SocialLink(
+                                  icon: FontAwesomeIcons.instagram,
+                                  url: 'https://instagram.com',
+                                ),
+                                SocialLink(
+                                  icon: FontAwesomeIcons.facebookF,
+                                  url: 'https://facebook.com',
+                                ),
+                                SocialLink(
+                                  icon: FontAwesomeIcons.twitter,
+                                  url: 'https://twitter.com',
+                                ),
+                              ],
+                              columns: [
+                                FooterColumn(
+                                  title: 'QUICK LINKS',
+                                  items: [
+                                    FooterItem(label: 'Home'),
+                                    FooterItem(label: 'Categories'),
+                                    FooterItem(label: 'Product Detail'),
+                                    FooterItem(label: 'Contact Us'),
+                                  ],
+                                ),
+                                FooterColumn(
+                                  title: 'CUSTOMER SERVICE',
+                                  items: [
+                                    FooterItem(
+                                      label: 'My Account',
+                                      url:
+                                          "https://chemrevolutions.com/account",
+                                    ),
+                                    FooterItem(
+                                      label: 'Order Status',
+                                      url: "https://chemrevolutions.com/orders",
+                                    ),
+                                    FooterItem(
+                                      label: 'Wishlist',
+                                      url:
+                                          "https://chemrevolutions.com/wishlist",
+                                    ),
+                                  ],
+                                ),
+                                FooterColumn(
+                                  title: 'INFORMATION',
+                                  items: [
+                                    FooterItem(label: 'About Us'),
+                                    FooterItem(label: 'Privacy Policy'),
+                                    FooterItem(label: 'Data Collection'),
+                                  ],
+                                ),
+                                FooterColumn(
+                                  title: 'POLICIES',
+                                  items: [
+                                    FooterItem(label: 'Privacy Policy'),
+                                    FooterItem(label: 'Data Collection'),
+                                    FooterItem(label: 'Terms & Conditions'),
+                                  ],
+                                ),
+                              ],
+                              copyright:
+                                  "© 2025 ChemRevolutions.com. All rights reserved.",
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-              child: Column(
-                children: [
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      "Privacy Policy",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: (screenWidth * 0.07).clamp(24.0, 40.0),
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: (screenHeight * 0.01).clamp(6.0, 8.0)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: contentPadding),
-                    child: Text(
-                      "Your privacy, security & trust are our responsibility.",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: (screenWidth * 0.04).clamp(12.0, 16.0),
-                      ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // body area
-            Expanded(
-              child: isMobile
-                  ? _buildMobileView(contentPadding)
-                  : _buildDesktopView(sidebarWidth, contentPadding),
-            ),
-          ],
-        );
-      },
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 
-  // Desktop layout (keeps your existing sidebar + content behaviour)
+  // -------------------------- DESKTOP VIEW --------------------------
   Widget _buildDesktopView(double sidebarWidth, double contentPadding) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,256 +216,151 @@ class _PolicyPageBState extends State<PolicyPageB> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 15,
-              )
+              BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 15),
             ],
           ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Quick Navigation",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: (sidebarWidth * 0.08).clamp(15.0, 18.0),
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Quick Navigation",
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: (sidebarWidth * 0.08).clamp(15.0, 18.0),
                 ),
-                SizedBox(height: (sidebarWidth * 0.07).clamp(14.0, 20.0)),
-                for (int i = 0; i < titles.length; i++)
-                  _buildNavItem(
-                    title: titles[i],
-                    isActive: selectedIndex == i,
-                    onTap: () {
-                      setState(() => selectedIndex = i);
-                      Scrollable.ensureVisible(
-                        sectionKeys[i].currentContext!,
-                        duration: const Duration(milliseconds: 500),
-                        curve: Curves.easeInOut,
-                      );
-                    },
-                  ),
-              ],
-            ),
+              ),
+              SizedBox(height: 20),
+
+              for (int i = 0; i < titles.length; i++)
+                _buildNavItem(
+                  title: titles[i],
+                  isActive: selectedIndex == i,
+                  onTap: () {
+                    setState(() => selectedIndex = i);
+                    Scrollable.ensureVisible(
+                      sectionKeys[i].currentContext!,
+                      duration: const Duration(milliseconds: 500),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                ),
+            ],
           ),
         ),
 
-        // main content + footer
-        Expanded(
-          child: _buildContentScroll(includeFooter: true),
-        ),
+        Expanded(child: _buildContentScroll()),
       ],
     );
   }
 
-  // Mobile layout
+  // -------------------------- MOBILE VIEW --------------------------
   Widget _buildMobileView(double contentPadding) {
-    return SingleChildScrollView(
-      controller: scrollController,
-      padding: EdgeInsets.symmetric(horizontal: contentPadding, vertical: 8),
-      child: Column(
-        children: [
-          // Dropdown navigation for mobile
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(
-              horizontal: contentPadding,
-              vertical: (contentPadding * 0.8).clamp(10.0, 14.0),
-            ),
-            margin: EdgeInsets.symmetric(horizontal: contentPadding),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(
-                  blurRadius: 8,
-                  color: Colors.black.withOpacity(0.1),
-                )
-              ],
-            ),
-            child: DropdownButtonHideUnderline(
-             child: DropdownButton<int>(
-  value: selectedIndex,
-  isExpanded: true,
-  items: List.generate(
-    titles.length,
-    (i) => DropdownMenuItem(
-      value: i,
-      child: Text(
-        titles[i],
-        overflow: TextOverflow.ellipsis,
-      ),
-    ),
-  ),
-  onChanged: (value) {
-    if (value == null) return; // prevent null crash
-
-    setState(() => selectedIndex = value);
-
-    Scrollable.ensureVisible(
-      sectionKeys[value].currentContext!,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
-  },
-),
-
-            ),
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(contentPadding),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(blurRadius: 8, color: Colors.black.withOpacity(0.1)),
+            ],
           ),
-
-          SizedBox(height: contentPadding),
-
-          _buildContentScroll(includeFooter: true),
-        ],
-      ),
-    );
-  }
-
-  // Shared content builder; set includeFooter true to attach the Footer widget
-  Widget _buildContentScroll({bool includeFooter = false}) {
-    return SingleChildScrollView(
-      controller: scrollController,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          Container(
-            constraints: const BoxConstraints(maxWidth: 800),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 20,
-                )
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: List.generate(
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<int>(
+              value: selectedIndex,
+              isExpanded: true,
+              items: List.generate(
                 titles.length,
-                (index) => Container(
-                  key: sectionKeys[index],
-                  margin: const EdgeInsets.only(bottom: 40),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 5,
-                            height: 18,
-                            decoration: BoxDecoration(
-                              color: Colors.amber,
-                              borderRadius: BorderRadius.circular(3),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              titles[index],
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w700,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      DefaultTextStyle(
-                        style: const TextStyle(
-                          fontSize: 15,
-                          height: 1.6,
-                          color: Colors.black87,
-                        ),
-                        child: content[index],
-                      ),
-                    ],
-                  ),
+                (i) => DropdownMenuItem(
+                  value: i,
+                  child: Text(titles[i], overflow: TextOverflow.ellipsis),
                 ),
               ),
+              onChanged: (value) {
+                setState(() => selectedIndex = value!);
+                Scrollable.ensureVisible(
+                  sectionKeys[value!].currentContext!,
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.easeInOut,
+                );
+              },
             ),
           ),
+        ),
 
-          // small spacing before footer
-          const SizedBox(height: 30),
+        SizedBox(height: contentPadding),
 
-          // include your footer (constructed like FooterDemoPage)
-          if (includeFooter) _buildFooter(),
-        ],
-      ),
+        _buildContentScroll(),
+      ],
     );
   }
 
-  // Reuse the Footer widget (not MyFooter) and construct demo columns + socials
-  Widget _buildFooter() {
-    // create the columns & social links same as FooterDemoPage in footer.dart
-    final social = [
-      SocialLink(icon: Icons.camera_alt, url: 'https://instagram.com'),
-      SocialLink(icon: Icons.facebook, url: 'https://facebook.com'),
-      SocialLink(icon: Icons.share, url: 'https://twitter.com'),
-    ];
-
-    final columns = [
-      FooterColumn(
-        title: 'QUICK LINKS',
-        items: [
-          FooterItem(label: 'Home', onTap: () {}),
-          FooterItem(label: 'Categories', onTap: () {}),
-          FooterItem(label: 'Product Detail', onTap: () {}),
-          FooterItem(label: 'Contact Us', onTap: () {}),
+  // ----------------------- MAIN CONTENT AREA -----------------------
+  Widget _buildContentScroll() {
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 800),
+      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20),
         ],
       ),
-      FooterColumn(
-        title: 'CUSTOMER SERVICE',
-        items: [
-          FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
-          FooterItem(label: 'Order Status', url: "https://chemrevolutions.com/orders"),
-          FooterItem(label: 'Wishlist', url: "https://chemrevolutions.com/wishlist"),
-        ],
-      ),
-      FooterColumn(
-        title: 'INFORMATION',
-        items: [
-          FooterItem(
-            label: 'About Us',
-            onTap: () {
-              // navigate if your app has route
-            },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: List.generate(
+          titles.length,
+          (index) => Container(
+            key: sectionKeys[index],
+            margin: const EdgeInsets.only(bottom: 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 18,
+                      decoration: BoxDecoration(
+                        color: Colors.amber,
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        titles[index],
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DefaultTextStyle(
+                  style: const TextStyle(
+                    fontSize: 15,
+                    height: 1.6,
+                    color: Colors.black87,
+                  ),
+                  child: content[index],
+                ),
+              ],
+            ),
           ),
-          FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-          FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-        ],
+        ),
       ),
-      FooterColumn(
-        title: 'POLICIES',
-        items: [
-          FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-          FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-          FooterItem(label: 'Terms & Conditions', url: "https://chemrevolutions.com/terms"),
-        ],
-      ),
-    ];
-
-    final footerLogo = FooterLogo(
-      image: Image.asset('assets/icons/chemo.png', fit: BoxFit.contain),
-      onTapUrl: "https://chemrevolutions.com",
-    );
-
-    return Footer(
-      logo: footerLogo,
-      socialLinks: social,
-      columns: columns,
-      copyright: "© 2025 ChemRevolutions.com. All rights reserved.",
     );
   }
 
-  // Navigation item builder (unchanged)
+  // -------------------------- NAV ITEM --------------------------
   Widget _buildNavItem({
     required String title,
     required bool isActive,
@@ -452,9 +389,9 @@ class _PolicyPageBState extends State<PolicyPageB> {
             fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
             color: Colors.black,
           ),
-          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
   }
 }
+//12-12-25

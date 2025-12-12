@@ -1,14 +1,16 @@
-import 'package:flutter/material.dart'; 
+import 'package:chem_revolutions/policy/policy.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import '/homepage/homepage.dart';
+import 'package:chem_revolutions/about/about.dart';
 import 'firebase_options.dart';
 
 // Import Cookie Popup Wrapper
-import '/policy/cookies.dart';   // <-- ADD THIS
+import '/policy/cookies.dart'; // <-- ADD THIS
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -37,6 +39,11 @@ class MyApp extends StatelessWidget {
 
       // 🔥 Cookie Popup FIRST → then HomePage
       home: const CookieApp(),
+      routes: {
+        '/home': (context) => const HomePage(),
+        '/about': (context) => const AboutPage(),
+        '/policy':(context) => const PolicyPageB()
+      },
     );
   }
 }

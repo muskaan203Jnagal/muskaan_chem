@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:chem_revolutions/header.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
+import 'package:chem_revolutions/homepage/homepage.dart';
 import 'package:chem_revolutions/footer.dart';
 
 void main() {
-  runApp(
-    const MaterialApp(debugShowCheckedModeBanner: false, home: AboutPage()),
-  );
+  runApp(MaterialApp(debugShowCheckedModeBanner: false, home: HomePage()));
 }
 
 class AboutPage extends StatefulWidget {
@@ -712,100 +710,85 @@ class _AboutPageState extends State<AboutPage>
                     ),
 
                     const SizedBox(height: 30),
-                    Footer(
-                      logo: FooterLogo(
-                        image: Image.asset(
-                          'assets/icons/chemo.png',
-                          fit: BoxFit.contain,
-                        ),
-                        onTapUrl: "https://chemrevolutions.com",
-                      ),
-                      socialLinks: [
-                        SocialLink(
-                          icon: FontAwesomeIcons.instagram,
-                          url: 'https://instagram.com',
-                        ),
-                        SocialLink(
-                          icon: FontAwesomeIcons.facebookF,
-                          url: 'https://facebook.com',
-                        ),
-                        SocialLink(
-                          icon: FontAwesomeIcons.twitter,
-                          url: 'https://twitter.com',
-                        ),
-                      ],
-                      columns: [
-                        FooterColumn(
-                          title: 'QUICK LINKS',
-                          items: [
-                            FooterItem(label: 'Home'),
-                            FooterItem(label: 'Categories'),
-                            FooterItem(label: 'Product Detail'),
-                            FooterItem(label: 'Contact Us'),
-                          ],
-                        ),
-                        FooterColumn(
-                          title: 'CUSTOMER SERVICE',
-                          items: [
-                            FooterItem(
-                              label: 'My Account',
-                              url: "https://chemrevolutions.com/account",
-                            ),
-                            FooterItem(
-                              label: 'Order Status',
-                              url: "https://chemrevolutions.com/orders",
-                            ),
-                            FooterItem(
-                              label: 'Wishlist',
-                              url: "https://chemrevolutions.com/wishlist",
-                            ),
-                          ],
-                        ),
-                        FooterColumn(
-                          title: 'INFORMATION',
-                          items: [
-                            FooterItem(
-                              label: 'About Us',
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const AboutPage(),
-                                  ),
-                                );
-                              },
-                            ),
 
-                            FooterItem(
-                              label: 'Privacy Policy',
-                              url: "https://chemrevolutions.com/privacy",
+                    Theme(
+                      data: ThemeData.dark().copyWith(
+                        textTheme: ThemeData.dark().textTheme.apply(
+                          fontFamily: 'Montserrat',
+                        ),
+                      ),
+                      child: ColoredBox(
+                        color: const Color.fromARGB(255, 8, 8, 8),
+                        child: Footer(
+                          logo: FooterLogo(
+                            image: Image.asset(
+                              'assets/icons/chemo.png',
+                              fit: BoxFit.contain,
                             ),
-                            FooterItem(
-                              label: 'Data Collection',
-                              url: "https://chemrevolutions.com/data",
+                            onTapUrl: "https://chemrevolutions.com",
+                          ),
+                          socialLinks: [
+                            SocialLink(
+                              icon: FontAwesomeIcons.instagram,
+                              url: 'https://instagram.com',
+                            ),
+                            SocialLink(
+                              icon: FontAwesomeIcons.facebookF,
+                              url: 'https://facebook.com',
+                            ),
+                            SocialLink(
+                              icon: FontAwesomeIcons.twitter,
+                              url: 'https://twitter.com',
                             ),
                           ],
-                        ),
-                        FooterColumn(
-                          title: 'POLICIES',
-                          items: [
-                            FooterItem(
-                              label: 'Privacy Policy',
-                              url: "https://chemrevolutions.com/privacy",
+                          columns: [
+                            FooterColumn(
+                              title: 'QUICK LINKS',
+                              items: [
+                                FooterItem(label: 'Home'),
+                                FooterItem(label: 'Categories'),
+                                FooterItem(label: 'Product Detail'),
+                                FooterItem(label: 'Contact Us'),
+                              ],
                             ),
-                            FooterItem(
-                              label: 'Data Collection',
-                              url: "https://chemrevolutions.com/data",
+                            FooterColumn(
+                              title: 'CUSTOMER SERVICE',
+                              items: [
+                                FooterItem(
+                                  label: 'My Account',
+                                  url: "https://chemrevolutions.com/account",
+                                ),
+                                FooterItem(
+                                  label: 'Order Status',
+                                  url: "https://chemrevolutions.com/orders",
+                                ),
+                                FooterItem(
+                                  label: 'Wishlist',
+                                  url: "https://chemrevolutions.com/wishlist",
+                                ),
+                              ],
                             ),
-                            FooterItem(
-                              label: 'Terms & Conditions',
-                              url: "https://chemrevolutions.com/terms",
+                            FooterColumn(
+                              title: 'INFORMATION',
+                              items: [
+                                FooterItem(label: 'About Us'),
+                                FooterItem(label: 'Privacy Policy'),
+                                FooterItem(label: 'Data Collection'),
+                              ],
+                            ),
+                            FooterColumn(
+                              title: 'POLICIES',
+                              items: [
+                                FooterItem(label: 'Privacy Policy'),
+                                FooterItem(label: 'Data Collection'),
+                                FooterItem(label: 'Terms & Conditions'),
+                              ],
                             ),
                           ],
+                          copyright:
+                              "© 2025 ChemRevolutions.com. All rights reserved.",
                         ),
-                      ],
-                      copyright:
-                          "© 2025 ChemRevolutions.com. All rights reserved.",
+                      ),
                     ),
                   ],
                 ),

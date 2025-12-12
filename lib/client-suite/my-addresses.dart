@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../header.dart'; // AppScaffold
+import '../footer.dart'; // Footer included by pages
 import 'widgets/top_banner_tabs.dart';
 
 const Color _black = Colors.black;
@@ -51,7 +54,7 @@ class AddressModel {
       firstName: data['firstName'] ?? '',
       lastName: data['lastName'] ?? '',
       line1: data['line1'] ?? '',
-      line2: data['line2'] ?? '',
+      line2: data['line2'] ?? null,
       city: data['city'] ?? '',
       state: data['state'] ?? '',
       country: data['country'] ?? '',
@@ -510,7 +513,7 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
               .toList(),
           onChanged: (v) {
             if (v != null && v != "Select country") {
-              controller.text = v;
+              controller.text = v as String;
             }
           },
         ),
@@ -519,104 +522,160 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
   }
 
   /// -----------------------------------------------------------------------
-  /// MAIN BUILD
+  /// MAIN BUILD (wrapped with AppScaffold so header + footer are consistent)
   /// -----------------------------------------------------------------------
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _white,
-      body: _loadingUser
-          ? const Center(child: CircularProgressIndicator(color: _black))
-          : NestedScrollView(
-              headerSliverBuilder: (_, __) => [
-                SliverToBoxAdapter(
-                  child: TopBannerTabs(active: AccountTab.addresses),
-                ),
-              ],
-              body: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: _maxWidth),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(width: 3, height: 24, color: _gold),
-                            const SizedBox(width: 12),
-                            Text(
-                              "My Addresses",
-                              style: GoogleFonts.montserrat(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: _black,
+    // Footer data same as homepage to keep consistency
+    final social = [
+      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
+      SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
+      SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
+    ];
+
+    void homePage() {}
+    void categoriesPage() {}
+    void productDetailPage() {}
+    void contactPage() {}
+
+    final columns = [
+      FooterColumn(title: 'QUICK LINKS', items: [
+        FooterItem(label: 'Home', onTap: homePage),
+        FooterItem(label: 'Categories', onTap: categoriesPage),
+        FooterItem(label: 'Product Detail', onTap: productDetailPage),
+        FooterItem(label: 'Contact Us', onTap: contactPage),
+      ]),
+      FooterColumn(title: 'CUSTOMER SERVICE', items: [
+        FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
+        FooterItem(label: 'Order Status', url: "https://chemrevolutions.com/orders"),
+        FooterItem(label: 'Wishlist', url: "https://chemrevolutions.com/wishlist"),
+      ]),
+      FooterColumn(title: 'INFORMATION', items: [
+        FooterItem(label: 'About Us', url: "https://chemrevolutions.com/about"),
+        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
+        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
+      ]),
+      FooterColumn(title: 'POLICIES', items: [
+        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
+        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
+        FooterItem(label: 'Terms & Conditions', url: "https://chemrevolutions.com/terms"),
+      ]),
+    ];
+
+    final body = SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TopBannerTabs(active: AccountTab.addresses),
+
+          // Main content area
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: _maxWidth),
+                child: _loadingUser
+                    ? const Center(child: CircularProgressIndicator(color: _black))
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(width: 3, height: 24, color: _gold),
+                              const SizedBox(width: 12),
+                              Text(
+                                "My Addresses",
+                                style: GoogleFonts.montserrat(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          ElevatedButton(
+                            onPressed: () => _openAddressDialog(),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _black,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 12,
                               ),
                             ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        ElevatedButton(
-                          onPressed: () => _openAddressDialog(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _black,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18,
-                              vertical: 12,
+                            child: Text(
+                              "Add New Address",
+                              style: GoogleFonts.montserrat(
+                                color: _white,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
-                          child: Text(
-                            "Add New Address",
-                            style: GoogleFonts.montserrat(
-                              color: _white,
-                              fontWeight: FontWeight.w600,
-                            ),
+
+                          const SizedBox(height: 24),
+
+                          StreamBuilder<QuerySnapshot>(
+                            stream: _addressesRef()
+                                .orderBy('createdAt', descending: true)
+                                .snapshots(),
+                            builder: (context, snap) {
+                              if (!snap.hasData) {
+                                return const Center(
+                                  child: CircularProgressIndicator(color: _black),
+                                );
+                              }
+
+                              if (snap.data!.docs.isEmpty) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 10),
+                                  child: Text(
+                                    "No address added yet.",
+                                    style: GoogleFonts.montserrat(fontSize: 18),
+                                  ),
+                                );
+                              }
+
+                              final list = snap.data!.docs
+                                  .map((d) => AddressModel.fromDoc(d))
+                                  .toList();
+
+                              return Column(
+                                children: list.map((a) => _addressTile(a)).toList(),
+                              );
+                            },
                           ),
-                        ),
 
-                        const SizedBox(height: 24),
-
-                        StreamBuilder<QuerySnapshot>(
-                          stream: _addressesRef()
-                              .orderBy('createdAt', descending: true)
-                              .snapshots(),
-                          builder: (context, snap) {
-                            if (!snap.hasData) {
-                              return const Center(
-                                child: CircularProgressIndicator(color: _black),
-                              );
-                            }
-
-                            if (snap.data!.docs.isEmpty) {
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 10),
-                                child: Text(
-                                  "No address added yet.",
-                                  style: GoogleFonts.montserrat(fontSize: 18),
-                                ),
-                              );
-                            }
-
-                            final list = snap.data!.docs
-                                .map((d) => AddressModel.fromDoc(d))
-                                .toList();
-
-                            return Column(
-                              children: list
-                                  .map((a) => _addressTile(a))
-                                  .toList(),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                          const SizedBox(height: 60),
+                        ],
+                      ),
               ),
             ),
+          ),
+
+          // Footer — keep consistent look with other pages
+          Theme(
+            data: ThemeData.dark().copyWith(
+              textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Montserrat'),
+            ),
+            child: ColoredBox(
+              color: const Color.fromARGB(255, 8, 8, 8),
+              child: Footer(
+                logo: FooterLogo(
+                  image: Image.asset('assets/icons/chemo.png', fit: BoxFit.contain),
+                  onTapUrl: "https://chemrevolutions.com",
+                ),
+                socialLinks: social,
+                columns: columns,
+                copyright: "© 2025 ChemRevolutions.com. All rights reserved.",
+              ),
+            ),
+          ),
+        ],
+      ),
     );
+
+    return AppScaffold(currentPage: 'ACCOUNT', body: body);
   }
 
   /// -----------------------------------------------------------------------
