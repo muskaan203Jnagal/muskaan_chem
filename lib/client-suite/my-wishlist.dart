@@ -5,12 +5,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// IMPORT PRODUCT MODEL + PRODUCT PAGE
+// PRODUCT MODEL + DETAIL PAGE
 import 'package:chem_revolutions/models/product.dart';
 import 'package:chem_revolutions/product_page/product_page.dart';
 
-// TOP BANNER
+// TOP BANNER + SHARED HEADER/FOOTER
+import '../header.dart';
+import '../footer.dart';
 import 'widgets/top_banner_tabs.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 const Color _black = Colors.black;
 const Color _white = Colors.white;
@@ -24,60 +27,116 @@ class MyWishlistPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
-    return Scaffold(
-      backgroundColor: _white,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, _) => [
-          SliverToBoxAdapter(child: TopBannerTabs(active: AccountTab.wishlist)),
-          SliverAppBar(
-            pinned: true,
-            backgroundColor: _white,
-            elevation: 0,
-            toolbarHeight: 0,
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(0),
-              child: Container(height: 1, color: _black.withOpacity(0.15)),
-            ),
-          ),
-        ],
+    // Footer data (same as Account Settings)
+    final social = [
+      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
+      SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
+      SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
+    ];
 
-        // ---------------- REAL WISHLIST DATA ----------------
-        body: StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection("users")
-              .doc(user!.uid)
-              .collection("wishlist")
-              .snapshots(),
-          builder: (context, wishlistSnap) {
-            if (wishlistSnap.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
+    void homePage() {}
+    void categoriesPage() {}
+    void productDetailPage() {}
+    void contactPage() {}
 
-            if (!wishlistSnap.hasData || wishlistSnap.data!.docs.isEmpty) {
-              return _emptyWishlistUI();
-            }
+    final columns = [
+      FooterColumn(title: 'QUICK LINKS', items: [
+        FooterItem(label: 'Home', onTap: homePage),
+        FooterItem(label: 'Categories', onTap: categoriesPage),
+        FooterItem(label: 'Product Detail', onTap: productDetailPage),
+        FooterItem(label: 'Contact Us', onTap: contactPage),
+      ]),
+      FooterColumn(title: 'CUSTOMER SERVICE', items: [
+        FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
+        FooterItem(label: 'Order Status', url: "https://chemrevolutions.com/orders"),
+        FooterItem(label: 'Wishlist', url: "https://chemrevolutions.com/wishlist"),
+      ]),
+      FooterColumn(title: 'INFORMATION', items: [
+        FooterItem(label: 'About Us', url: "https://chemrevolutions.com/about"),
+        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
+        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
+      ]),
+      FooterColumn(title: 'POLICIES', items: [
+        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
+        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
+        FooterItem(label: 'Terms & Conditions', url: "https://chemrevolutions.com/terms"),
+      ]),
+    ];
 
-            final wishlistDocs = wishlistSnap.data!.docs;
-            final productIds = wishlistDocs.map((d) => d.id).toList();
+    return AppScaffold(
+      currentPage: "PROFILE",
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // TOP PROFILE TABS
+            TopBannerTabs(active: AccountTab.wishlist),
 
-            return FutureBuilder<QuerySnapshot>(
-              future: FirebaseFirestore.instance
-                  .collection("products")
-                  .where(FieldPath.documentId, whereIn: productIds)
-                  .get(),
-              builder: (context, productSnap) {
-                if (!productSnap.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+            // ---------------- REAL WISHLIST DATA ----------------
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection("users")
+                  .doc(user!.uid)
+                  .collection("wishlist")
+                  .snapshots(),
+              builder: (context, wishlistSnap) {
+                if (wishlistSnap.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.only(top: 80),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
                 }
 
-                final products = productSnap.data!.docs
-                    .map((doc) => Product.fromFirestore(doc))
-                    .toList();
+                if (!wishlistSnap.hasData || wishlistSnap.data!.docs.isEmpty) {
+                  return _emptyWishlistUI();
+                }
 
-                return _wishlistUI(context, products);
+                final productIds = wishlistSnap.data!.docs.map((d) => d.id).toList();
+
+                return FutureBuilder<QuerySnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection("products")
+                      .where(FieldPath.documentId, whereIn: productIds)
+                      .get(),
+                  builder: (context, productSnap) {
+                    if (!productSnap.hasData) {
+                      return const Padding(
+                        padding: EdgeInsets.only(top: 80),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
+
+                    final products = productSnap.data!.docs
+                        .map((doc) => Product.fromFirestore(doc))
+                        .toList();
+
+                    return _wishlistUI(context, products);
+                  },
+                );
               },
-            );
-          },
+            ),
+
+            const SizedBox(height: 60),
+
+            // ---------------- FOOTER (SAME AS ACCOUNT SETTINGS) ----------------
+            Theme(
+              data: ThemeData.dark().copyWith(
+                textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Montserrat'),
+              ),
+              child: ColoredBox(
+                color: const Color.fromARGB(255, 8, 8, 8),
+                child: Footer(
+                  logo: FooterLogo(
+                    image: Image.asset('assets/icons/chemo.png', fit: BoxFit.contain),
+                    onTapUrl: "https://chemrevolutions.com",
+                  ),
+                  socialLinks: social,
+                  columns: columns,
+                  copyright:
+                      "© 2025 ChemRevolutions.com. All rights reserved.",
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -85,13 +144,16 @@ class MyWishlistPage extends StatelessWidget {
 
   // ---------------- EMPTY UI ----------------
   Widget _emptyWishlistUI() {
-    return Center(
-      child: Text(
-        "Your wishlist is empty",
-        style: GoogleFonts.montserrat(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: _black,
+    return Padding(
+      padding: const EdgeInsets.only(top: 80),
+      child: Center(
+        child: Text(
+          "Your wishlist is empty",
+          style: GoogleFonts.montserrat(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: _black,
+          ),
         ),
       ),
     );
@@ -99,7 +161,7 @@ class MyWishlistPage extends StatelessWidget {
 
   // ---------------- MAIN UI ----------------
   Widget _wishlistUI(BuildContext context, List<Product> products) {
-    return SingleChildScrollView(
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
       child: Center(
         child: ConstrainedBox(
@@ -160,8 +222,6 @@ class MyWishlistPage extends StatelessWidget {
                   );
                 },
               ),
-
-              const SizedBox(height: 60),
             ],
           ),
         ),
@@ -202,7 +262,6 @@ class _WishlistCardState extends State<WishlistCard> {
     final width = MediaQuery.of(context).size.width;
     final bool isMobile = width < 600;
 
-    // ⭐ FIXED IMAGE USING PROXY
     final String proxiedImage =
         'https://wsrv.nl/?url=${Uri.encodeComponent(widget.product.mainImageUrl)}';
 
@@ -218,14 +277,13 @@ class _WishlistCardState extends State<WishlistCard> {
           ),
         ],
       ),
-
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ---------------- IMAGE ----------------
+          // IMAGE
           GestureDetector(
             onTap: () {
-              Navigator.pushReplacement(
+              Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => ProductPage(product: widget.product),
@@ -235,7 +293,7 @@ class _WishlistCardState extends State<WishlistCard> {
             child: ClipRRect(
               borderRadius: BorderRadius.zero,
               child: Image.network(
-                proxiedImage, // ⭐ FIXED
+                proxiedImage,
                 height: isMobile ? 95 : 120,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -252,7 +310,7 @@ class _WishlistCardState extends State<WishlistCard> {
 
           const SizedBox(height: 8),
 
-          // ---------------- NAME + PRICE ----------------
+          // NAME + PRICE
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
             child: Column(
@@ -281,7 +339,7 @@ class _WishlistCardState extends State<WishlistCard> {
 
           const SizedBox(height: 10),
 
-          // ---------------- BUTTONS ----------------
+          // BUTTONS
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             child: Row(

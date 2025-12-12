@@ -9,6 +9,7 @@ import 'package:chem_revolutions/models/product.dart';
 import 'package:chem_revolutions/models/review.dart';
 // Assuming the path to ProductPage is correct for recursive navigation
 import 'package:chem_revolutions/product_page/product_page.dart';
+import 'package:chem_revolutions/client-suite/signup.dart';
 
 /// ===============================
 /// MAIN PRODUCT PAGE (STATEFUL)
@@ -333,118 +334,126 @@ class _ProductPageState extends State<ProductPage> {
       ),
     );
   }
+// -----------------------
+// Add to cart + Wishlist row (Updated with Signup redirection)
+// -----------------------
+Widget _buildAddToCartAndWishlistRow() {
+  return Row(
+    children: [
+      /// ADD TO CART BUTTON
+      Expanded(
+        flex: 5,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _hoverAddToCart = true),
+          onExit: (_) => setState(() => _hoverAddToCart = false),
+          child: GestureDetector(
+            onTap: () {
+              final user = FirebaseAuth.instance.currentUser;
 
-  // -----------------------
-  // New: Add to cart + Wishlist row
-  // -----------------------
-  Widget _buildAddToCartAndWishlistRow() {
-    return Row(
-      children: [
-        // Add to cart (reduced width using Expanded)
-        Expanded(
-          flex: 5,
-          child: MouseRegion(
-            onEnter: (_) => setState(() => _hoverAddToCart = true),
-            onExit: (_) => setState(() => _hoverAddToCart = false),
-            child: GestureDetector(
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'Added $_quantity x ${widget.product.name} to cart (${_subscriptionSelected ? 'Subscription' : 'One-time'})',
-                    ),
-                  ),
+              /// 🔐 If user not logged in → navigate to Signup page
+              if (user == null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ClientSignupPage()),
                 );
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                height: 46,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: _hoverAddToCart
-                      ? const Color(0xFFB8860B)
-                      : Colors.black,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'ADD TO CART',
-                  style: GoogleFonts.montserrat(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 1.1,
+                return;
+              }
+
+              /// 🛒 User logged in → normal behaviour
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Added $_quantity x ${widget.product.name} to cart (${_subscriptionSelected ? 'Subscription' : 'One-time'})',
                   ),
+                ),
+              );
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              height: 46,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _hoverAddToCart
+                    ? const Color(0xFFB8860B)
+                    : Colors.black,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'ADD TO CART',
+                style: GoogleFonts.montserrat(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                  letterSpacing: 1.1,
                 ),
               ),
             ),
           ),
         ),
+      ),
 
-        const SizedBox(width: 12),
+      const SizedBox(width: 12),
 
-        // Wishlist button: uses StreamBuilder to get real-time wishlist state
-        SizedBox(
-          width: 46,
-          height: 46,
-          child: StreamBuilder<bool>(
-            stream: isWishlisted(widget.product.id),
-            builder: (context, snap) {
-              final wishlisted = snap.data ?? false;
+      /// WISHLIST BUTTON
+      SizedBox(
+        width: 46,
+        height: 46,
+        child: StreamBuilder<bool>(
+          stream: isWishlisted(widget.product.id),
+          builder: (context, snap) {
+            final wishlisted = snap.data ?? false;
 
-              Color bgColor;
-              IconData iconData;
-              Color iconColor = Colors.white;
-
-              if (wishlisted) {
-                // already wishlisted -> gold background + filled heart
-                bgColor = _hoverWishlist
+            /// UI state variables
+            final bgColor = wishlisted
+                ? (_hoverWishlist
                     ? const Color(0xFFB8860B).withOpacity(0.95)
-                    : const Color(0xFFB8860B);
-                iconData = Icons.favorite;
-              } else {
-                // not wishlisted -> black background, outline heart
-                bgColor = _hoverWishlist
+                    : const Color(0xFFB8860B))
+                : (_hoverWishlist
                     ? const Color(0xFFB8860B)
-                    : Colors.black;
-                iconData = Icons.favorite_border;
-              }
+                    : Colors.black);
 
-              return MouseRegion(
-                onEnter: (_) => setState(() => _hoverWishlist = true),
-                onExit: (_) => setState(() => _hoverWishlist = false),
-                child: GestureDetector(
-                  onTap: () async {
-                    final user = FirebaseAuth.instance.currentUser;
-                    if (user == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Please log in to use wishlist."),
-                        ),
-                      );
-                      return;
-                    }
-                    if (wishlisted) {
-                      await removeFromWishlist(widget.product.id);
-                    } else {
-                      await addToWishlist(widget.product.id);
-                    }
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    decoration: BoxDecoration(
-                      color: bgColor,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Icon(iconData, color: iconColor, size: 22),
+            final iconData =
+                wishlisted ? Icons.favorite : Icons.favorite_border;
+
+            return MouseRegion(
+              onEnter: (_) => setState(() => _hoverWishlist = true),
+              onExit: (_) => setState(() => _hoverWishlist = false),
+              child: GestureDetector(
+                onTap: () async {
+                  final user = FirebaseAuth.instance.currentUser;
+
+                  /// 🔐 If user not logged in → navigate to Signup page
+                  if (user == null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ClientSignupPage()),
+                    );
+                    return;
+                  }
+
+                  /// ❤️ Logged in → toggle wishlist
+                  if (wishlisted) {
+                    await removeFromWishlist(widget.product.id);
+                  } else {
+                    await addToWishlist(widget.product.id);
+                  }
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(4),
                   ),
+                  child: Icon(iconData, color: Colors.white, size: 22),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   // 💡 HELPER WIDGETS (Defined only once)
 

@@ -7,8 +7,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // NEW — common top banner (you said this file already exists)
 import 'widgets/top_banner_tabs.dart';
+import '../header.dart';
+import '../footer.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-/// ACCOUNT SETTINGS — Loads once in initState()
+// -----------------------------------------------------------------
+// ACCOUNT SETTINGS PAGE — Wrapped with AppScaffold (shared header)
+// -----------------------------------------------------------------
+
 class AccountSettingsPage extends StatefulWidget {
   const AccountSettingsPage({Key? key}) : super(key: key);
 
@@ -738,280 +744,318 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
     final width = MediaQuery.of(context).size.width;
     final bool isWide = width > 760;
 
-    return Theme(
-      data: Theme.of(context).copyWith(
-        primaryColor: _black,
-        splashColor: Colors.black12,
-        highlightColor: Colors.black12,
-        hoverColor: Colors.black12,
-        colorScheme: const ColorScheme.light(
-          primary: _black,
-          secondary: _gold,
-          surface: _white,
-          onPrimary: _white,
-          onSecondary: _black,
-        ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: _black,
-            overlayColor: Colors.black12,
-            textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+    // Footer data same as homepage to keep consistency
+    final social = [
+      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
+      SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
+      SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
+    ];
+
+    void homePage() { print("Go to Home Page"); }
+    void categoriesPage() { print("Go to Categories Page"); }
+    void productDetailPage() { print("Go to Product Detail Page"); }
+    void contactPage() { print("Go to Contact Page"); }
+
+    final columns = [
+      FooterColumn(title: 'QUICK LINKS', items: [
+        FooterItem(label: 'Home', onTap: homePage),
+        FooterItem(label: 'Categories', onTap: categoriesPage),
+        FooterItem(label: 'Product Detail', onTap: productDetailPage),
+        FooterItem(label: 'Contact Us', onTap: contactPage),
+      ]),
+      FooterColumn(title: 'CUSTOMER SERVICE', items: [
+        FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
+        FooterItem(label: 'Order Status', url: "https://chemrevolutions.com/orders"),
+        FooterItem(label: 'Wishlist', url: "https://chemrevolutions.com/wishlist"),
+      ]),
+      FooterColumn(title: 'INFORMATION', items: [
+        FooterItem(label: 'About Us', url: "https://chemrevolutions.com/about"),
+        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
+        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
+      ]),
+      FooterColumn(title: 'POLICIES', items: [
+        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
+        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
+        FooterItem(label: 'Terms & Conditions', url: "https://chemrevolutions.com/terms"),
+      ]),
+    ];
+
+    return AppScaffold(
+      currentPage: 'PROFILE',
+      body: Theme(
+        data: Theme.of(context).copyWith(
+          primaryColor: _black,
+          splashColor: Colors.black12,
+          highlightColor: Colors.black12,
+          hoverColor: Colors.black12,
+          colorScheme: const ColorScheme.light(
+            primary: _black,
+            secondary: _gold,
+            surface: _white,
+            onPrimary: _white,
+            onSecondary: _black,
+          ),
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(
+              foregroundColor: _black,
+              overlayColor: Colors.black12,
+              textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+            ),
+          ),
+          outlinedButtonTheme: OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: _black, width: 1.2),
+              foregroundColor: _black,
+              textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            ),
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _black,
+              foregroundColor: _white,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
+            ),
           ),
         ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: _black, width: 1.2),
-            foregroundColor: _black,
-            textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _black,
-            foregroundColor: _white,
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            textStyle: GoogleFonts.montserrat(fontWeight: FontWeight.w600),
-          ),
-        ),
-      ),
-      child: Scaffold(
-        backgroundColor: _white,
-        body: _loading
-            ? const Center(child: CircularProgressIndicator(color: _black))
-            : NestedScrollView(
-                headerSliverBuilder: (context, _) {
-                  return [
-                    SliverToBoxAdapter(
-                      child: TopBannerTabs(active: AccountTab.settings),
-                    ),
-                    SliverAppBar(
-                      pinned: true,
-                      backgroundColor: _white,
-                      elevation: 0,
-                      toolbarHeight: 0,
-                      bottom: PreferredSize(
-                        preferredSize: const Size.fromHeight(0),
-                        child: Container(
-                          height: 1,
-                          color: Colors.black.withOpacity(0.15),
+        child: Scaffold(
+          backgroundColor: _white,
+          // Show spinner while loading
+          body: _loading
+              ? const Center(child: CircularProgressIndicator(color: _black))
+              : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Top banner tabs (same as before)
+                      TopBannerTabs(active: AccountTab.settings),
+
+                      // Main content area — keep original layout intact
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 30,
                         ),
-                      ),
-                    ),
-                  ];
-                },
-                body: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _placeholder("My Orders"),
-                    _placeholder("My Addresses"),
-                    _placeholder("My Wishlist"),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxWidth: _maxWidth,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _goldHeading("Account"),
+                                const SizedBox(height: 10),
+                                Text(
+                                  "View and edit your personal info below.",
+                                  style: GoogleFonts.montserrat(fontSize: 14),
+                                ),
+                                const SizedBox(height: 36),
 
-                    // ACCOUNT SETTINGS UI
-                    SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 30,
-                      ),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: _maxWidth,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _goldHeading("Account"),
-                              const SizedBox(height: 10),
-                              Text(
-                                "View and edit your personal info below.",
-                                style: GoogleFonts.montserrat(fontSize: 14),
-                              ),
-                              const SizedBox(height: 36),
+                                _goldHeading("Personal Info"),
+                                const SizedBox(height: 20),
 
-                              _goldHeading("Personal Info"),
-                              const SizedBox(height: 20),
-
-                              isWide
-                                  ? Row(
-                                      children: [
-                                        Expanded(
-                                          child: _formInput(
+                                isWide
+                                    ? Row(
+                                        children: [
+                                          Expanded(
+                                            child: _formInput(
+                                              label: "First name",
+                                              controller: _firstName,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: _formInput(
+                                              label: "Last name",
+                                              controller: _lastName,
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Column(
+                                        children: [
+                                          _formInput(
                                             label: "First name",
                                             controller: _firstName,
                                           ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: _formInput(
+                                          const SizedBox(height: 16),
+                                          _formInput(
                                             label: "Last name",
                                             controller: _lastName,
                                           ),
-                                        ),
-                                      ],
-                                    )
-                                  : Column(
-                                      children: [
-                                        _formInput(
-                                          label: "First name",
-                                          controller: _firstName,
-                                        ),
-                                        const SizedBox(height: 16),
-                                        _formInput(
-                                          label: "Last name",
-                                          controller: _lastName,
-                                        ),
-                                      ],
+                                        ],
+                                      ),
+
+                                const SizedBox(height: 16),
+                                _formInput(label: "Phone", controller: _phone),
+
+                                const SizedBox(height: 30),
+
+                                Row(
+                                  children: [
+                                    OutlinedButton(
+                                      onPressed: () => _loadUserOnce(),
+                                      child: const Text("Discard"),
                                     ),
-
-                              const SizedBox(height: 16),
-                              _formInput(label: "Phone", controller: _phone),
-
-                              const SizedBox(height: 30),
-
-                              Row(
-                                children: [
-                                  OutlinedButton(
-                                    onPressed: () => _loadUserOnce(),
-                                    child: const Text("Discard"),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  ElevatedButton(
-                                    onPressed: _saving ? null : _updateInfo,
-                                    child: _saving
-                                        ? const SizedBox(
-                                            height: 18,
-                                            width: 18,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            ),
-                                          )
-                                        : const Text("Update Info"),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 40),
-                              Container(
-                                height: 1,
-                                color: Colors.black.withOpacity(0.2),
-                              ),
-                              const SizedBox(height: 40),
-
-                              _goldHeading("Login Info"),
-                              const SizedBox(height: 20),
-
-                              Text(
-                                "Login email:",
-                                style: GoogleFonts.montserrat(
-                                  fontWeight: FontWeight.w600,
+                                    const SizedBox(width: 14),
+                                    ElevatedButton(
+                                      onPressed: _saving ? null : _updateInfo,
+                                      child: _saving
+                                          ? const SizedBox(
+                                              height: 18,
+                                              width: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            )
+                                          : const Text("Update Info"),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(height: 8),
 
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      readOnly: true,
-                                      controller: _email,
-                                      decoration: InputDecoration(
-                                        filled: true,
-                                        fillColor: _white,
-                                        enabledBorder: OutlineInputBorder(
-                                          borderSide: const BorderSide(
+                                const SizedBox(height: 40),
+                                Container(
+                                  height: 1,
+                                  color: Colors.black.withOpacity(0.2),
+                                ),
+                                const SizedBox(height: 40),
+
+                                _goldHeading("Login Info"),
+                                const SizedBox(height: 20),
+
+                                Text(
+                                  "Login email:",
+                                  style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        readOnly: true,
+                                        controller: _email,
+                                        decoration: InputDecoration(
+                                          filled: true,
+                                          fillColor: _white,
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: const BorderSide(
+                                              color: _black,
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide:
+                                                const BorderSide(color: _gold),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    OutlinedButton(
+                                      onPressed: _openChangeEmailDialog,
+                                      child: const Text("Change Email"),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 24),
+
+                                Text(
+                                  "Password:",
+                                  style: GoogleFonts.montserrat(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 13,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: _black),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          "•••••••",
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 16,
+                                            letterSpacing: 3,
                                             color: _black,
                                           ),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderSide:
-                                              const BorderSide(color: _gold),
-                                          borderRadius:
-                                              BorderRadius.circular(6),
-                                        ),
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 14,
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  OutlinedButton(
-                                    onPressed: _openChangeEmailDialog,
-                                    child: const Text("Change Email"),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 24),
-
-                              Text(
-                                "Password:",
-                                style: GoogleFonts.montserrat(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 13,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: _black),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
+                                    const SizedBox(width: 12),
+                                    // Button label depends on whether user has password provider
+                                    OutlinedButton(
+                                      onPressed: _hasPasswordProvider
+                                          ? _openChangePasswordDialog
+                                          : _openCreatePasswordDialog,
                                       child: Text(
-                                        "•••••••",
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 16,
-                                          letterSpacing: 3,
-                                          color: _black,
-                                        ),
+                                        _hasPasswordProvider
+                                            ? "Change Password"
+                                            : "Create Password",
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  // Button label depends on whether user has password provider
-                                  OutlinedButton(
-                                    onPressed: _hasPasswordProvider
-                                        ? _openChangePasswordDialog
-                                        : _openCreatePasswordDialog,
-                                    child: Text(
-                                      _hasPasswordProvider
-                                          ? "Change Password"
-                                          : "Create Password",
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
 
-                              const SizedBox(height: 40),
+                                const SizedBox(height: 40),
 
-                              ElevatedButton(
-                                onPressed: _confirmLogout,
-                                child: const Text("Logout"),
-                              ),
+                                ElevatedButton(
+                                  onPressed: _confirmLogout,
+                                  child: const Text("Logout"),
+                                ),
 
-                              const SizedBox(height: 100),
-                            ],
+                                const SizedBox(height: 100),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+
+                      // Footer — styled the same as homepage
+                      Theme(
+                        data: ThemeData.dark().copyWith(
+                          textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Montserrat'),
+                        ),
+                        child: ColoredBox(
+                          color: const Color.fromARGB(255, 8, 8, 8),
+                          child: Footer(
+                            logo: FooterLogo(
+                              image: Image.asset('assets/icons/chemo.png', fit: BoxFit.contain),
+                              onTapUrl: "https://chemrevolutions.com",
+                            ),
+                            socialLinks: social,
+                            columns: columns,
+                            copyright: "© 2025 ChemRevolutions.com. All rights reserved.",
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-      ),
+        ),
+      )
     );
   }
 }
