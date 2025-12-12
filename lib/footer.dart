@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:chem_revolutions/about/about.dart';
-
 
 class MyFooter extends StatelessWidget {
   const MyFooter({super.key});
@@ -90,20 +88,21 @@ class FooterDemoPage extends StatelessWidget {
           FooterItem(
             label: 'About Us',
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AboutPage()),
-              );
+              Navigator.pushNamed(context, '/about');
             },
           ),
 
           FooterItem(
             label: 'Privacy Policy',
-            url: "https://chemrevolutions.com/privacy",
+            onTap: () {
+              Navigator.pushNamed(context, '/privacy');
+            },
           ),
           FooterItem(
             label: 'Data Collection',
-            url: "https://chemrevolutions.com/data",
+            onTap: () {
+              Navigator.pushNamed(context, '/privacy');
+            },
           ),
         ],
       ),
@@ -112,15 +111,21 @@ class FooterDemoPage extends StatelessWidget {
         items: [
           FooterItem(
             label: 'Privacy Policy',
-            url: "https://chemrevolutions.com/privacy",
+            onTap: () {
+              Navigator.pushNamed(context, '/privacy');
+            },
           ),
           FooterItem(
             label: 'Data Collection',
-            url: "https://chemrevolutions.com/data",
+            onTap: () {
+              Navigator.pushNamed(context, '/privacy');
+            },
           ),
           FooterItem(
             label: 'Terms & Conditions',
-            url: "https://chemrevolutions.com/terms",
+            onTap: () {
+              Navigator.pushNamed(context, '/privacy');
+            },
           ),
         ],
       ),
@@ -364,7 +369,8 @@ class Footer extends StatelessWidget {
           column.title,
           textAlign: TextAlign.center,
           style: GoogleFonts.montserrat(
-            color: Colors.white, // FIX: Explicitly set to white to resolve the greyish color issue
+            color: Colors
+                .white, // FIX: Explicitly set to white to resolve the greyish color issue
             fontWeight: FontWeight.bold,
             fontSize: isMobile ? 14 : 16,
           ),
@@ -502,6 +508,6 @@ void main() {
   // if you might need to load assets or perform platform-specific calls early.
   // Although not strictly necessary for this simple example, it's good practice.
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   runApp(const MyFooter());
 }

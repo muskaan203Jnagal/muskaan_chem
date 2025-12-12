@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:chem_revolutions/homepage/homepage.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:chem_revolutions/about/about.dart';
+
 
 // Responsive breakpoints
 class ResponsiveBreakpoints {
@@ -100,7 +100,6 @@ class _AppScaffoldState extends State<AppScaffold>
       _drawerAnimationController?.reverse();
     }
   }
-
   void _navigateToPage(String page) {
     // Close drawer first
     if (_isDrawerOpen) {
@@ -109,6 +108,7 @@ class _AppScaffoldState extends State<AppScaffold>
       });
       _drawerAnimationController?.reverse();
     }
+
 
     // Navigate if different page
     if (widget.currentPage != page) {
@@ -638,6 +638,7 @@ class _AppHeaderState extends State<AppHeader> {
                     text: 'ABOUT',
                     isActive: widget.currentPage == 'ABOUT',
                     onTap: () => widget.onNavigate('ABOUT'),
+                   
                     fontSize: 13,
                   ),
                   const SizedBox(width: 28),
@@ -685,16 +686,13 @@ class _AppHeaderState extends State<AppHeader> {
                     isActive: widget.currentPage == 'HOME',
                     onTap: () => widget.onNavigate('HOME'),
                   ),
+                      
+                  
                   const SizedBox(width: 40),
-                  _NavLink(
+                    _NavLink(
                     text: 'ABOUT',
                     isActive: widget.currentPage == 'ABOUT',
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AboutPage()),
-                      );
-                    },
+                    onTap: () => widget.onNavigate('ABOUT'),
                   ),
 
                   const SizedBox(width: 40),

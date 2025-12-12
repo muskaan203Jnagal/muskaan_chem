@@ -34,7 +34,8 @@ flutter:
   assets:
   - assets/icons/google_logo.png
   - assets/icons/chemo.png
-
+  - assets/images/products/
+  - assets/images/
   fonts:
     - family: Montserrat
       fonts:
