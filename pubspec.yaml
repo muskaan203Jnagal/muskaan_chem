@@ -20,7 +20,8 @@ dependencies:
   firebase_storage: ^13.0.4
   intl: ^0.20.2
   url_launcher: ^6.3.2
-  font_awesome_flutter: ^10.7.0
+  font_awesome_flutter: ^10.12.0
+  carousel_slider: ^5.1.1
 
 dev_dependencies:
   flutter_test:
@@ -31,8 +32,16 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/icons/
-    - assets/images/
-    - assets/images/products/
-    - assets/icons/google_logo.png
-    - assets/icons/chemo.png
+  - assets/icons/google_logo.png
+  - assets/icons/chemo.png
+
+  fonts:
+    - family: Montserrat
+      fonts:
+        - asset: assets/fonts/Montserrat-Regular.ttf
+        - asset: assets/fonts/Montserrat-Italic.ttf
+          style: italic
+        - asset: assets/fonts/Montserrat-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Montserrat-Black.ttf # Corresponds to w900/w800 used in code
+          weight: 900

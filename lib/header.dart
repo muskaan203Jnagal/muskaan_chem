@@ -1,7 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:chem_revolutions/homepage/homepage.dart';
-
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:chem_revolutions/about/about.dart';
+
+// Responsive breakpoints
+class ResponsiveBreakpoints {
+  static const double mobile = 768;
+  static const double tablet = 1024;
+
+  static bool isMobile(BuildContext context) =>
+      MediaQuery.of(context).size.width < mobile;
+
+  static bool isTablet(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return width >= mobile && width < tablet;
+  }
+
+  static bool isDesktop(BuildContext context) =>
+      MediaQuery.of(context).size.width >= tablet;
+}
 
 // Main reusable widget that wraps your pages with header and drawer
 class AppScaffold extends StatefulWidget {
@@ -98,10 +116,10 @@ class _AppScaffoldState extends State<AppScaffold>
     }
   }
 
-  Widget _buildDrawer() {
+  Widget _buildDrawer(bool isTablet) {
     return Container(
       height: double.infinity,
-      width: double.infinity,
+      width: isTablet ? 400 : double.infinity, // Fixed width for tablet
       color: Colors.black,
       child: SafeArea(
         child: Column(
@@ -109,34 +127,37 @@ class _AppScaffoldState extends State<AppScaffold>
           children: [
             // Header with close button
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isTablet ? 24 : 20),
               color: Colors.black,
               child: Row(
                 children: [
                   Image.asset(
                     'assets/icons/chemo.png',
-                    height: 42,
+                    height: isTablet ? 48 : 42,
                     fit: BoxFit.contain,
-                    errorBuilder: (c, e, s) =>
-                        const Icon(Icons.image, color: Colors.white, size: 36),
+                    errorBuilder: (c, e, s) => Icon(
+                      Icons.image,
+                      color: Colors.white,
+                      size: isTablet ? 40 : 36,
+                    ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'CHEM Revolution',
                       style: TextStyle(
-                        color: Color(0xFFD4AF37),
-                        fontSize: 18,
+                        color: const Color(0xFFD4AF37),
+                        fontSize: isTablet ? 20 : 18,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                   GestureDetector(
                     onTap: _toggleDrawer,
-                    child: const Icon(
+                    child: Icon(
                       Icons.close,
                       color: Colors.white,
-                      size: 28,
+                      size: isTablet ? 30 : 28,
                     ),
                   ),
                 ],
@@ -156,24 +177,28 @@ class _AppScaffoldState extends State<AppScaffold>
                       Icons.home_outlined,
                       isActive: widget.currentPage == 'HOME',
                       onTap: () => _navigateToPage('HOME'),
+                      isTablet: isTablet,
                     ),
                     _buildDrawerItem(
                       'ABOUT',
                       Icons.info_outline,
                       isActive: widget.currentPage == 'ABOUT',
                       onTap: () => _navigateToPage('ABOUT'),
+                      isTablet: isTablet,
                     ),
                     _buildDrawerItem(
                       'GET VERIFIED',
                       Icons.verified_user_outlined,
                       isActive: widget.currentPage == 'GETVERIFIED',
                       onTap: () => _navigateToPage('GETVERIFIED'),
+                      isTablet: isTablet,
                     ),
                     _buildDrawerItem(
                       'PRODUCTS',
                       Icons.shopping_bag_outlined,
                       isActive: widget.currentPage == 'PRODUCTS',
                       onTap: () => _navigateToPage('PRODUCTS'),
+                      isTablet: isTablet,
                     ),
 
                     const Divider(color: Colors.white24, height: 1),
@@ -184,6 +209,7 @@ class _AppScaffoldState extends State<AppScaffold>
                       onTap: () {
                         _toggleDrawer();
                       },
+                      isTablet: isTablet,
                     ),
 
                     const Divider(color: Colors.white24, height: 1),
@@ -192,9 +218,12 @@ class _AppScaffoldState extends State<AppScaffold>
               ),
             ),
 
-            // Bottom section with CHEM Revolution logo and social icons
+            // Bottom section with logo and social icons
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.symmetric(
+                vertical: isTablet ? 24 : 20,
+                horizontal: isTablet ? 20 : 16,
+              ),
               decoration: BoxDecoration(
                 color: Colors.black,
                 border: Border(
@@ -204,30 +233,35 @@ class _AppScaffoldState extends State<AppScaffold>
                   ),
                 ),
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
+                  // Logo
                   Image.asset(
                     'assets/icons/chemo.png',
-                    height: 120,
+                    height: isTablet ? 140 : 120,
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
+                      return Icon(
                         Icons.image,
                         color: Colors.white,
-                        size: 60,
+                        size: isTablet ? 70 : 60,
                       );
                     },
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildSocialIcon(icon: Icons.wechat, onTap: () {}),
-                      const SizedBox(width: 15),
-                      _buildSocialIcon(icon: Icons.facebook, onTap: () {}),
-                      const SizedBox(width: 15),
-                      _buildSocialIcon(icon: Icons.camera_alt, onTap: () {}),
-                    ],
+                  SizedBox(width: isTablet ? 28 : 24),
+                  // Social icons
+                  _buildSocialIcon(
+                    icon: FontAwesomeIcons.instagram,
+                    onTap: () {},
+                    isTablet: isTablet,
+                  ),
+                  SizedBox(width: isTablet ? 16 : 12),
+                  _buildSocialIcon(
+                    icon: Icons.facebook,
+                    onTap: () {},
+                    isTablet: isTablet,
                   ),
                 ],
               ),
@@ -238,16 +272,20 @@ class _AppScaffoldState extends State<AppScaffold>
     );
   }
 
-  Widget _buildSocialIcon({required IconData icon, VoidCallback? onTap}) {
+  Widget _buildSocialIcon({
+    required IconData icon,
+    VoidCallback? onTap,
+    bool isTablet = false,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(10),
+        padding: EdgeInsets.all(isTablet ? 12 : 10),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
         ),
-        child: Icon(icon, color: Colors.white, size: 24),
+        child: Icon(icon, color: Colors.white, size: isTablet ? 26 : 24),
       ),
     );
   }
@@ -257,6 +295,7 @@ class _AppScaffoldState extends State<AppScaffold>
     IconData icon, {
     bool isActive = false,
     VoidCallback? onTap,
+    bool isTablet = false,
   }) {
     return Material(
       color: isActive ? Colors.white.withOpacity(0.1) : Colors.black,
@@ -265,7 +304,10 @@ class _AppScaffoldState extends State<AppScaffold>
         splashColor: Colors.white.withOpacity(0.1),
         highlightColor: Colors.white.withOpacity(0.05),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 24 : 20,
+            vertical: isTablet ? 18 : 16,
+          ),
           decoration: BoxDecoration(
             border: isActive
                 ? const Border(
@@ -278,14 +320,14 @@ class _AppScaffoldState extends State<AppScaffold>
               Icon(
                 icon,
                 color: isActive ? const Color(0xFFD4AF37) : Colors.white,
-                size: 22,
+                size: isTablet ? 24 : 22,
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: isTablet ? 16 : 14),
               Text(
                 text,
-                style: TextStyle(
+                style: GoogleFonts.montserrat(
                   color: isActive ? const Color(0xFFD4AF37) : Colors.white,
-                  fontSize: 16,
+                  fontSize: isTablet ? 17 : 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -298,8 +340,9 @@ class _AppScaffoldState extends State<AppScaffold>
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 768;
+    final isMobile = ResponsiveBreakpoints.isMobile(context);
+    final isTablet = ResponsiveBreakpoints.isTablet(context);
+    final isDesktop = ResponsiveBreakpoints.isDesktop(context);
 
     return Scaffold(
       body: Stack(
@@ -310,7 +353,7 @@ class _AppScaffoldState extends State<AppScaffold>
               // Top message bar
               SliverToBoxAdapter(
                 child: Container(
-                  height: 40,
+                  height: isTablet ? 44 : (isMobile ? 40 : 40),
                   color: const Color(0xFFB8860B),
                   child: Center(
                     child: AnimatedSwitcher(
@@ -325,9 +368,9 @@ class _AppScaffoldState extends State<AppScaffold>
                       child: Text(
                         _messages[_currentIndex],
                         key: ValueKey<int>(_currentIndex),
-                        style: const TextStyle(
+                        style: GoogleFonts.montserrat(
                           color: Colors.black,
-                          fontSize: 12,
+                          fontSize: isTablet ? 13 : 12,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1.0,
                         ),
@@ -338,7 +381,7 @@ class _AppScaffoldState extends State<AppScaffold>
                 ),
               ),
 
-              // Sticky header - Different heights for mobile and desktop
+              // Sticky header
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _StickyHeaderDelegate(
@@ -348,6 +391,7 @@ class _AppScaffoldState extends State<AppScaffold>
                     onNavigate: _navigateToPage,
                   ),
                   isMobile: isMobile,
+                  isTablet: isTablet,
                 ),
               ),
 
@@ -356,8 +400,8 @@ class _AppScaffoldState extends State<AppScaffold>
             ],
           ),
 
-          // Mobile drawer overlay
-          if (isMobile &&
+          // Drawer overlay for mobile and tablet
+          if ((isMobile || isTablet) &&
               _drawerSlideAnimation != null &&
               _drawerAnimationController != null)
             Positioned.fill(
@@ -384,14 +428,28 @@ class _AppScaffoldState extends State<AppScaffold>
                               ),
                             ),
                           ),
-                        Transform.translate(
-                          offset: Offset(0, dy),
-                          child: child,
-                        ),
+                        // For tablet, align drawer to the right
+                        if (isTablet)
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            child: Transform.translate(
+                              offset: Offset(
+                                400 * (1 - _drawerAnimationController!.value),
+                                0,
+                              ),
+                              child: _buildDrawer(true),
+                            ),
+                          )
+                        else
+                          Transform.translate(
+                            offset: Offset(0, dy),
+                            child: _buildDrawer(false),
+                          ),
                       ],
                     );
                   },
-                  child: _buildDrawer(),
                 ),
               ),
             ),
@@ -404,14 +462,19 @@ class _AppScaffoldState extends State<AppScaffold>
 class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
   final bool isMobile;
+  final bool isTablet;
 
-  _StickyHeaderDelegate({required this.child, required this.isMobile});
+  _StickyHeaderDelegate({
+    required this.child,
+    required this.isMobile,
+    required this.isTablet,
+  });
 
   @override
-  double get minExtent => isMobile ? 80 : 100;
+  double get minExtent => isMobile ? 80 : (isTablet ? 90 : 100);
 
   @override
-  double get maxExtent => isMobile ? 80 : 100;
+  double get maxExtent => isMobile ? 80 : (isTablet ? 90 : 100);
 
   @override
   Widget build(
@@ -461,8 +524,12 @@ class _AppHeaderState extends State<AppHeader> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 768;
+    final isMobile = ResponsiveBreakpoints.isMobile(context);
+    final isTablet = ResponsiveBreakpoints.isTablet(context);
+    final isDesktop = ResponsiveBreakpoints.isDesktop(context);
+
+    final headerHeight = isMobile ? 80.0 : (isTablet ? 90.0 : 100.0);
+    final horizontalPadding = isMobile ? 16.0 : (isTablet ? 28.0 : 40.0);
 
     return Material(
       elevation: 4,
@@ -470,7 +537,7 @@ class _AppHeaderState extends State<AppHeader> {
         clipBehavior: Clip.none,
         children: [
           Container(
-            height: isMobile ? 80 : 100,
+            height: headerHeight,
             decoration: BoxDecoration(
               color: Colors.black,
               boxShadow: [
@@ -482,47 +549,32 @@ class _AppHeaderState extends State<AppHeader> {
               ],
             ),
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 40),
-              child: isMobile ? _buildMobileHeader() : _buildDesktopHeader(),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: isMobile
+                  ? _buildMobileHeader()
+                  : (isTablet ? _buildTabletHeader() : _buildDesktopHeader()),
             ),
           ),
 
-          // Desktop logo
-          if (!_isSearchActive && !isMobile)
+          // Logo positioning
+          if (!_isSearchActive)
             Positioned(
-              left: 60,
+              left: isTablet ? 40 : (isDesktop ? 60 : 20),
               right: 0,
-              top: -60,
+              top: isTablet ? -30 : (isDesktop ? -46 : -15),
               child: Center(
                 child: Image.asset(
                   'assets/icons/chemo.png',
-                  height: 230,
+                  height: isTablet ? 160 : (isDesktop ? 200 : 120),
                   fit: BoxFit.contain,
                   errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox(
-                      height: 230,
-                      child: Icon(Icons.image, size: 50, color: Colors.white),
-                    );
-                  },
-                ),
-              ),
-            ),
-
-          // Mobile logo
-          if (!_isSearchActive && isMobile)
-            Positioned(
-              left: 0,
-              right: 0,
-              top: -30,
-              child: Center(
-                child: Image.asset(
-                  'assets/icons/chemo.png',
-                  height: 140,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const SizedBox(
-                      height: 140,
-                      child: Icon(Icons.image, size: 40, color: Colors.white),
+                    return SizedBox(
+                      height: isTablet ? 160 : (isDesktop ? 200 : 120),
+                      child: Icon(
+                        Icons.image,
+                        size: isTablet ? 45 : (isDesktop ? 50 : 40),
+                        color: Colors.white,
+                      ),
                     );
                   },
                 ),
@@ -535,50 +587,7 @@ class _AppHeaderState extends State<AppHeader> {
 
   Widget _buildMobileHeader() {
     return _isSearchActive
-        ? Row(
-            children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    autofocus: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Search products...',
-                      hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
-                        fontSize: 14,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: Colors.white.withOpacity(0.7),
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isSearchActive = false;
-                    _searchController.clear();
-                  });
-                },
-                child: const Icon(Icons.close, color: Colors.white, size: 24),
-              ),
-            ],
-          )
+        ? _buildSearchBar(isMobile: true)
         : Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -604,50 +613,68 @@ class _AppHeaderState extends State<AppHeader> {
           );
   }
 
-  Widget _buildDesktopHeader() {
+  Widget _buildTabletHeader() {
     return _isSearchActive
-        ? Row(
+        ? _buildSearchBar(isTablet: true)
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+              Row(
+                children: [
+                  _IconButton(
+                    icon: Icons.menu,
+                    onTap: widget.onMenuTap,
+                    size: 26,
                   ),
-                  child: TextField(
-                    controller: _searchController,
-                    autofocus: true,
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                    decoration: InputDecoration(
-                      hintText: 'Search products...',
-                      hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
-                        fontSize: 16,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 15,
-                      ),
-                    ),
+                  const SizedBox(width: 20),
+                  _NavLink(
+                    text: 'HOME',
+                    isActive: widget.currentPage == 'HOME',
+                    onTap: () => widget.onNavigate('HOME'),
+                    fontSize: 13,
                   ),
-                ),
+                  const SizedBox(width: 28),
+                  _NavLink(
+                    text: 'ABOUT',
+                    isActive: widget.currentPage == 'ABOUT',
+                    onTap: () => widget.onNavigate('ABOUT'),
+                    fontSize: 13,
+                  ),
+                  const SizedBox(width: 28),
+                  _NavLink(
+                    text: 'PRODUCTS',
+                    isActive: widget.currentPage == 'PRODUCTS',
+                    onTap: () => widget.onNavigate('PRODUCTS'),
+                    fontSize: 13,
+                  ),
+                ],
               ),
-              const SizedBox(width: 15),
-              MouseRegion(
-                cursor: SystemMouseCursors.click,
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isSearchActive = false;
-                      _searchController.clear();
-                    });
-                  },
-                  child: const Icon(Icons.close, color: Colors.white, size: 28),
-                ),
+              const Spacer(),
+              Row(
+                children: [
+                  _buildCountryDropdown(isTablet: true),
+                  const SizedBox(width: 24),
+                  _IconButton(
+                    icon: Icons.search,
+                    onTap: () => setState(() => _isSearchActive = true),
+                    size: 25,
+                  ),
+                  const SizedBox(width: 20),
+                  const _IconButton(icon: Icons.person_outline, size: 25),
+                  const SizedBox(width: 20),
+                  const _IconButton(
+                    icon: Icons.shopping_cart_outlined,
+                    size: 25,
+                  ),
+                ],
               ),
             ],
-          )
+          );
+  }
+
+  Widget _buildDesktopHeader() {
+    return _isSearchActive
+        ? _buildSearchBar(isDesktop: true)
         : Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -703,7 +730,77 @@ class _AppHeaderState extends State<AppHeader> {
           );
   }
 
-  Widget _buildCountryDropdown({required bool isMobile}) {
+  Widget _buildSearchBar({
+    bool isMobile = false,
+    bool isTablet = false,
+    bool isDesktop = false,
+  }) {
+    final fontSize = isMobile ? 14.0 : (isTablet ? 15.0 : 16.0);
+    final closeIconSize = isMobile ? 24.0 : (isTablet ? 26.0 : 28.0);
+
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: TextField(
+              controller: _searchController,
+              autofocus: true,
+              style: GoogleFonts.montserrat(
+                color: Colors.white,
+                fontSize: fontSize,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Search products...',
+                hintStyle: GoogleFonts.montserrat(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: fontSize,
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(
+                  horizontal: isMobile ? 16 : (isTablet ? 18 : 20),
+                  vertical: isMobile ? 12 : (isTablet ? 13 : 15),
+                ),
+                prefixIcon: isMobile
+                    ? Icon(
+                        Icons.search,
+                        color: Colors.white.withOpacity(0.7),
+                        size: 20,
+                      )
+                    : null,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 15),
+        MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _isSearchActive = false;
+                _searchController.clear();
+              });
+            },
+            child: Icon(Icons.close, color: Colors.white, size: closeIconSize),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCountryDropdown({bool isMobile = false, bool isTablet = false}) {
+    final horizontalPadding = isMobile ? 8.0 : (isTablet ? 10.0 : 12.0);
+    final verticalPadding = isMobile ? 4.0 : (isTablet ? 6.0 : 8.0);
+    final flagWidth = isMobile ? 16.0 : (isTablet ? 18.0 : 20.0);
+    final flagHeight = isMobile ? 12.0 : (isTablet ? 13.0 : 14.0);
+    final fontSize = isMobile ? 12.0 : (isTablet ? 13.0 : 14.0);
+    final spacing = isMobile ? 6.0 : (isTablet ? 7.0 : 8.0);
+    final iconSize = isMobile ? 16.0 : (isTablet ? 17.0 : 18.0);
+
     return PopupMenuButton<String>(
       onSelected: (String value) {
         setState(() {
@@ -723,8 +820,8 @@ class _AppHeaderState extends State<AppHeader> {
             child: Row(
               children: [
                 Container(
-                  width: 20,
-                  height: 14,
+                  width: flagWidth,
+                  height: flagHeight,
                   decoration: BoxDecoration(
                     image: DecorationImage(
                       image: NetworkImage(entry.value),
@@ -736,9 +833,9 @@ class _AppHeaderState extends State<AppHeader> {
                 const SizedBox(width: 8),
                 Text(
                   entry.key,
-                  style: const TextStyle(
+                  style: GoogleFonts.montserrat(
                     color: Colors.white,
-                    fontSize: 14,
+                    fontSize: fontSize,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -749,8 +846,8 @@ class _AppHeaderState extends State<AppHeader> {
       },
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 8 : 12,
-          vertical: isMobile ? 4 : 8,
+          horizontal: horizontalPadding,
+          vertical: verticalPadding,
         ),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.white, width: 2),
@@ -760,8 +857,8 @@ class _AppHeaderState extends State<AppHeader> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: isMobile ? 16 : 20,
-              height: isMobile ? 12 : 14,
+              width: flagWidth,
+              height: flagHeight,
               decoration: BoxDecoration(
                 image: DecorationImage(
                   image: NetworkImage(_countries[_selectedCountry]!),
@@ -770,20 +867,20 @@ class _AppHeaderState extends State<AppHeader> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            SizedBox(width: isMobile ? 6 : 8),
+            SizedBox(width: spacing),
             Text(
               _selectedCountry,
-              style: TextStyle(
+              style: GoogleFonts.montserrat(
                 color: Colors.white,
-                fontSize: isMobile ? 12 : 14,
+                fontSize: fontSize,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            SizedBox(width: isMobile ? 2 : 4),
+            SizedBox(width: spacing - 2),
             Icon(
               Icons.keyboard_arrow_down,
               color: Colors.white,
-              size: isMobile ? 16 : 18,
+              size: iconSize,
             ),
           ],
         ),
@@ -796,8 +893,14 @@ class _NavLink extends StatefulWidget {
   final String text;
   final bool isActive;
   final VoidCallback? onTap;
+  final double? fontSize;
 
-  const _NavLink({required this.text, this.isActive = false, this.onTap});
+  const _NavLink({
+    required this.text,
+    this.isActive = false,
+    this.onTap,
+    this.fontSize,
+  });
 
   @override
   State<_NavLink> createState() => _NavLinkState();
@@ -816,11 +919,11 @@ class _NavLinkState extends State<_NavLink> {
         onTap: widget.onTap ?? () {},
         child: Text(
           widget.text,
-          style: TextStyle(
+          style: GoogleFonts.montserrat(
             color: widget.isActive || _isHovered
                 ? const Color(0xFFD4AF37)
                 : Colors.white,
-            fontSize: 14,
+            fontSize: widget.fontSize ?? 14,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.2,
           ),
@@ -833,8 +936,13 @@ class _NavLinkState extends State<_NavLink> {
 class _IconButton extends StatefulWidget {
   final IconData icon;
   final VoidCallback? onTap;
+  final double? size; // Add size parameter
 
-  const _IconButton({required this.icon, this.onTap});
+  const _IconButton({
+    required this.icon,
+    this.onTap,
+    this.size, // Add to constructor
+  });
 
   @override
   State<_IconButton> createState() => _IconButtonState();
@@ -854,7 +962,7 @@ class _IconButtonState extends State<_IconButton> {
         child: Icon(
           widget.icon,
           color: _isHovered ? const Color(0xFFD4AF37) : Colors.white,
-          size: 24,
+          size: widget.size ?? 24, // Use the size parameter with default of 24
         ),
       ),
     );
