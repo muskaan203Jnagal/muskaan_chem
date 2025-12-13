@@ -23,6 +23,7 @@ class _ContactPageState extends State<ContactPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 768;
     // social & footer columns (copied pattern from homepage)
     final social = [
       SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
@@ -116,54 +117,84 @@ FooterItem(
               ),
 
               // Card (1196 x 667)
-              Center(
-                child: SizedBox(
-                  width: 1196,
-                  height: 667,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      // White card background
-                      Container(
-                        width: 1196,
-                        height: 667,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.06),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            )
-                          ],
-                        ),
-                      ),
+Center(
+  child: isMobile
+      // =======================
+      // 📱 MOBILE LAYOUT
+      // =======================
+      ? Column(
+          children: [
+            // 🖤 FULL SCREEN BLACK PANEL
+            SizedBox(
+              height: MediaQuery.of(context).size.height,
+              width: double.infinity,
+              child: const _BlackPanel(
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
 
-                      // Left black panel
-                      const Positioned(
-                        left: 28,
-                        top: 10,
-                        child: _BlackPanel(
-                          width: 491,
-                          height: 647,
-                        ),
-                      ),
+            // 📝 FORM SECTION BELOW
+            Container(
+              width: double.infinity,
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: const _FormArea(),
+            ),
+          ],
+        )
 
-                      // Right form area
-                      Positioned(
-                        left: 28 + 491 + 24,
-                        top: 18,
-                        child: SizedBox(
-                          width: 1196 - (28 + 491 + 28),
-                          height: 627,
-                          child: const _FormArea(),
-                        ),
-                      ),
-                    ],
-                  ),
+      // =======================
+      // 🖥 DESKTOP LAYOUT (UNCHANGED)
+      // =======================
+      : SizedBox(
+          width: 1196,
+          height: 667,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // White card background
+              Container(
+                width: 1196,
+                height: 667,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.06),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    )
+                  ],
                 ),
               ),
+
+              // Left black panel
+              const Positioned(
+                left: 28,
+                top: 10,
+                child: _BlackPanel(
+                  width: 491,
+                  height: 647,
+                ),
+              ),
+
+              // Right form area
+              Positioned(
+                left: 28 + 491 + 24,
+                top: 18,
+                child: SizedBox(
+                  width: 1196 - (28 + 491 + 28),
+                  height: 627,
+                  child: const _FormArea(),
+                ),
+              ),
+            ],
+          ),
+        ),
+),
+
 
               const SizedBox(height: 60),
 
