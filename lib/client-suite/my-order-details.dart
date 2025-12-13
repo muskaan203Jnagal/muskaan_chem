@@ -34,14 +34,20 @@ class OrderDetailsPage extends StatelessWidget {
     void homePage() {}
     void categoriesPage() {}
     void productDetailPage() {}
-    void contactPage() {}
+
 
     final columns = [
       FooterColumn(title: 'QUICK LINKS', items: [
         FooterItem(label: 'Home', onTap: homePage),
         FooterItem(label: 'Categories', onTap: categoriesPage),
         FooterItem(label: 'Product Detail', onTap: productDetailPage),
-        FooterItem(label: 'Contact Us', onTap: contactPage),
+FooterItem(
+  label: 'Contact Us',
+  onTap: () {
+    Navigator.pushNamed(context, '/contact');
+  },
+),
+
       ]),
       FooterColumn(title: 'CUSTOMER SERVICE', items: [
         FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),

@@ -1,0 +1,674 @@
+// lib/contact/contact.dart
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chem_revolutions/homepage/homepage.dart';
+
+// Use same header/footer wiring as homepage
+import '/header.dart';
+import '/footer.dart';
+
+class ContactPage extends StatefulWidget {
+  const ContactPage({super.key});
+
+  @override
+  State<ContactPage> createState() => _ContactPageState();
+}
+
+class _ContactPageState extends State<ContactPage> {
+  // Footer navigation functions (use context here)
+
+  @override
+  Widget build(BuildContext context) {
+    // social & footer columns (copied pattern from homepage)
+    final social = [
+      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
+      SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
+      SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
+    ];
+
+    final columns = [
+   FooterColumn(
+  title: 'QUICK LINKS',
+  items: [
+    FooterItem(
+      label: 'Home',
+      onTap: () {
+        Navigator.pushNamed(context, '/home');
+      },
+    ),
+    FooterItem(
+      label: 'Categories',
+      onTap: () {
+        Navigator.pushNamed(context, '/home');
+      },
+    ),
+    FooterItem(
+      label: 'Product Detail',
+      onTap: () {
+        Navigator.pushNamed(context, '/home');
+      },
+    ),
+FooterItem(
+  label: 'Contact Us',
+  onTap: () {
+    print('FOOTER → CONTACT CLICKED');
+    Navigator.pushReplacementNamed(context, '/contact');
+  },
+),
+
+
+  ],
+),
+
+
+      FooterColumn(title: 'CUSTOMER SERVICE', items: [
+        FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
+        FooterItem(label: 'Order Status', url: "https://chemrevolutions.com/orders"),
+        FooterItem(label: 'Wishlist', url: "https://chemrevolutions.com/wishlist"),
+      ]),
+      FooterColumn(title: 'INFORMATION', items: [
+        FooterItem(label: 'About Us', url: "https://chemrevolutions.com/about"),
+        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
+        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
+      ]),
+      FooterColumn(title: 'POLICIES', items: [
+        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
+        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
+        FooterItem(label: 'Terms & Conditions', url: "https://chemrevolutions.com/terms"),
+      ]),
+    ];
+
+    return AppScaffold(
+      currentPage: 'CONTACT',
+      body: SingleChildScrollView(
+        child: Container(
+          color: const Color(0xFFF6F6F6),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 30),
+
+              // Headline above the card
+              Column(
+                children: [
+                  Text(
+                    'Contact Us',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFFF5A800),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Any question or remarks? Just write us a message!',
+                    style: GoogleFonts.montserrat(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                ],
+              ),
+
+              // Card (1196 x 667)
+              Center(
+                child: SizedBox(
+                  width: 1196,
+                  height: 667,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // White card background
+                      Container(
+                        width: 1196,
+                        height: 667,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            )
+                          ],
+                        ),
+                      ),
+
+                      // Left black panel
+                      const Positioned(
+                        left: 28,
+                        top: 10,
+                        child: _BlackPanel(
+                          width: 491,
+                          height: 647,
+                        ),
+                      ),
+
+                      // Right form area
+                      Positioned(
+                        left: 28 + 491 + 24,
+                        top: 18,
+                        child: SizedBox(
+                          width: 1196 - (28 + 491 + 28),
+                          height: 627,
+                          child: const _FormArea(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 60),
+
+              // FOOTER (same pattern you used on homepage)
+              Theme(
+                data: ThemeData.dark().copyWith(
+                  textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Montserrat'),
+                ),
+                child: ColoredBox(
+                  color: const Color.fromARGB(255, 8, 8, 8),
+                  child: Footer(
+                    logo: FooterLogo(
+                      image: Image.asset('assets/icons/chemo.png', fit: BoxFit.contain),
+                      onTapUrl: "https://chemrevolutions.com",
+                    ),
+                    socialLinks: social,
+                    columns: columns,
+                    copyright: "© 2025 ChemRevolutions.com. All rights reserved.",
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ---------- BLACK PANEL (unchanged) ----------
+class _BlackPanel extends StatefulWidget {
+  final double width;
+  final double height;
+  const _BlackPanel({
+    super.key,
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  State<_BlackPanel> createState() => _BlackPanelState();
+}
+
+class _BlackPanelState extends State<_BlackPanel> {
+  final List<bool> _hover = [false, false, false];
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: widget.width,
+            height: widget.height,
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                // heading — top-left
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Contact Information',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Say something to start a live chat!',
+                        style: GoogleFonts.montserrat(
+                          fontSize: 13,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // center contact block — aligned with heading
+                Expanded(
+                  child: Center(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: widget.width * 0.7),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.phone, color: Colors.white, size: 18),
+                                const SizedBox(width: 10),
+                                Text('+1012 3456 789', style: GoogleFonts.montserrat(color: Colors.white)),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.email, color: Colors.white, size: 18),
+                                const SizedBox(width: 10),
+                                Text('demo@gmail.com', style: GoogleFonts.montserrat(color: Colors.white)),
+                              ],
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.only(top: 2.0),
+                                  child: Icon(Icons.location_on, color: Colors.white, size: 18),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    '132 Dartmouth Street Boston, Massachusetts 02156 United States',
+                                    style: GoogleFonts.montserrat(color: Colors.white, fontSize: 12),
+                                    textAlign: TextAlign.left,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // social icons bottom-left
+                Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4.0, bottom: 6.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: List.generate(3, (index) {
+                        IconData iconData;
+                        switch (index) {
+                          case 0:
+                            iconData = FontAwesomeIcons.facebookF;
+                            break;
+                          case 1:
+                            iconData = FontAwesomeIcons.twitter;
+                            break;
+                          default:
+                            iconData = FontAwesomeIcons.instagram;
+                        }
+
+                        final isHover = _hover[index];
+                        final bg = isHover ? Colors.white : const Color(0xFFFFC107);
+                        final iconColor = isHover ? Colors.black : Colors.white;
+
+                        return MouseRegion(
+                          onEnter: (_) => setState(() => _hover[index] = true),
+                          onExit: (_) => setState(() => _hover[index] = false),
+                          child: GestureDetector(
+                            onTap: () {},
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 8),
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: bg,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(iconData, color: iconColor, size: 18),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Eclipse PNG — placed as before (optional image; adjust path if needed)
+          Positioned(
+            right: -70,
+            bottom: -40,
+            child: IgnorePointer(
+              child: Image.asset(
+                'assets/images/eclipse.png',
+                width: 200,
+                height: 200,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// ---------- FORM AREA with Firestore submit (unchanged) ----------
+class _FormArea extends StatefulWidget {
+  const _FormArea({super.key});
+
+  @override
+  State<_FormArea> createState() => _FormAreaState();
+}
+
+class _FormAreaState extends State<_FormArea> {
+  final _formKey = GlobalKey<FormState>();
+
+  // controllers
+  final TextEditingController _first = TextEditingController();
+  final TextEditingController _last = TextEditingController();
+  final TextEditingController _email = TextEditingController();
+  final TextEditingController _phone = TextEditingController();
+  final TextEditingController _message = TextEditingController();
+
+  String? _subject = 'General Inquiry';
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _first.dispose();
+    _last.dispose();
+    _email.dispose();
+    _phone.dispose();
+    _message.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _submitting = true);
+
+    try {
+      final data = {
+        'firstName': _first.text.trim(),
+        'lastName': _last.text.trim(),
+        'email': _email.text.trim(),
+        'phone': _phone.text.trim(),
+        'subject': _subject ?? 'General Inquiry',
+        'message': _message.text.trim(),
+        'timestamp': FieldValue.serverTimestamp(),
+        'isRead': false,
+      };
+
+      await FirebaseFirestore.instance.collection('contactSubmissions').add(data);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Message sent — thank you!')));
+        _formKey.currentState!.reset();
+        _first.clear();
+        _last.clear();
+        _email.clear();
+        _phone.clear();
+        _message.clear();
+        setState(() {
+          _subject = 'General Inquiry';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: Colors.black,
+          selectionColor: Color(0x33000000),
+          selectionHandleColor: Colors.black,
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+        child: DefaultTextStyle(
+          style: GoogleFonts.montserrat(color: Colors.black87),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 8),
+
+Row(
+  children: [
+    Expanded(
+      child: _labelledUnderlineField(
+        controller: _first,
+        label: 'First Name',
+        validator: (v) {
+          if (v == null || v.trim().isEmpty) {
+            return 'First name is required';
+          }
+          return null;
+        },
+      ),
+    ),
+    const SizedBox(width: 18),
+    Expanded(
+      child: _labelledUnderlineField(
+        controller: _last,
+        label: 'Last Name',
+        validator: (v) {
+          if (v == null || v.trim().isEmpty) {
+            return 'Last name is required';
+          }
+          return null;
+        },
+      ),
+    ),
+  ],
+),
+
+                const SizedBox(height: 12),
+                _labelledUnderlineField(
+                  controller: _email,
+                  label: 'Email',
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) return 'Enter email';
+                    final re = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                    if (!re.hasMatch(v.trim())) return 'Enter valid email';
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+               _labelledUnderlineField(
+  controller: _phone,
+  label: 'Phone Number',
+  validator: (v) {
+    if (v == null || v.trim().isEmpty) {
+      return 'Phone number is required';
+    }
+    if (v.trim().length < 10) {
+      return 'Enter a valid phone number';
+    }
+    return null;
+  },
+),
+
+                const SizedBox(height: 18),
+
+                Text('Select Subject?', style: GoogleFonts.montserrat(fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 6,
+                  children: [
+                    _radioTile('General Inquiry'),
+                    _radioTile('Suggestions'),
+                    _radioTile('Product'),
+                    _radioTile('Other'),
+                  ],
+                ),
+                const SizedBox(height: 18),
+
+                Text('Message', style: GoogleFonts.montserrat(fontSize: 13, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 6),
+                Container(
+                  height: 160,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1)),
+                  ),
+                  child: TextFormField(
+                    controller: _message,
+                    maxLines: 6,
+                    cursorColor: Colors.black,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) return 'Please enter a message';
+                      return null;
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Write your message..',
+                      hintStyle: GoogleFonts.montserrat(fontSize: 13, color: Colors.grey),
+                      border: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                    ),
+                    style: GoogleFonts.montserrat(color: Colors.black),
+                  ),
+                ),
+
+                const Spacer(),
+
+                Center(
+                  child: SizedBox(
+                    width: 260,
+                    child: ElevatedButton(
+                      onPressed: _submitting ? null : _submit,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 10,
+                        shadowColor: Colors.black38,
+                      ),
+                      child: _submitting
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(width: 6),
+                                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                                const SizedBox(width: 12),
+                                Text('Sending...', style: GoogleFonts.montserrat(color: Colors.white)),
+                              ],
+                            )
+                          : Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('Send Message', style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                                const SizedBox(width: 12),
+                                const Icon(Icons.send, color: Colors.white, size: 18),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _radioTile(String label) {
+    return InkWell(
+      onTap: () => setState(() => _subject = label),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Radio<String>(
+            value: label,
+            groupValue: _subject,
+            activeColor: Colors.black,
+            onChanged: (v) => setState(() => _subject = v),
+          ),
+          const SizedBox(width: 4),
+          Text(label, style: GoogleFonts.montserrat(fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
+  Widget _labelledUnderlineField({
+    required TextEditingController controller,
+    required String label,
+    String? Function(String?)? validator,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.montserrat(fontSize: 12, color: Colors.black54)),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1.2)),
+          ),
+          child: TextFormField(
+            controller: controller,
+            cursorColor: Colors.black,
+            validator: validator,
+            decoration: InputDecoration(
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+              border: InputBorder.none,
+              hintText: label == 'Email' ? 'email@example.com' : null,
+              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300, width: 1.2)),
+              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.black, width: 1.2)),
+            ),
+            style: GoogleFonts.montserrat(fontSize: 13),
+          ),
+        ),
+      ],
+    );
+  }
+}
