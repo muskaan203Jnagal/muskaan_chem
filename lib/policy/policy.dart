@@ -144,26 +144,33 @@ class _PolicyPageBState extends State<PolicyPageB> {
                                 FooterColumn(
                                   title: 'QUICK LINKS',
                                   items: [
-                                    FooterItem(label: 'Home',onTap: () {
+                                    FooterItem(
+                                      label: 'Home',
+                                      onTap: () {
                                         Navigator.of(
                                           context,
                                           rootNavigator: true,
                                         ).pushReplacementNamed('/home');
-                                      },),
-                                    FooterItem(label: 'Categories',
-                                    onTap: () {
+                                      },
+                                    ),
+                                    FooterItem(
+                                      label: 'Categories',
+                                      onTap: () {
                                         Navigator.of(
                                           context,
                                           rootNavigator: true,
                                         ).pushReplacementNamed('/home');
-                                      }, ),
-                                    FooterItem(label: 'Product Detail',
-                                    onTap: () {
+                                      },
+                                    ),
+                                    FooterItem(
+                                      label: 'Product Detail',
+                                      onTap: () {
                                         Navigator.of(
                                           context,
                                           rootNavigator: true,
                                         ).pushReplacementNamed('/home');
-                                      },),
+                                      },
+                                    ),
                                     FooterItem(
                                       label: 'Contact Us',
                                       onTap: () {
@@ -189,8 +196,12 @@ class _PolicyPageBState extends State<PolicyPageB> {
                                     ),
                                     FooterItem(
                                       label: 'Wishlist',
-                                      url:
-                                          "https://chemrevolutions.com/wishlist",
+                                      onTap: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/my-wishlist',
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),

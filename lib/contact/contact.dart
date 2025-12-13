@@ -78,7 +78,9 @@ class _ContactPageState extends State<ContactPage> {
           ),
           FooterItem(
             label: 'Wishlist',
-            url: "https://chemrevolutions.com/wishlist",
+            onTap: () {
+              Navigator.pushNamed(context, '/my-wishlist');
+            },
           ),
         ],
       ),

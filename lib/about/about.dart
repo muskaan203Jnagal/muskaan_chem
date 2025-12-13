@@ -815,7 +815,9 @@ class _AboutPageState extends State<AboutPage>
                                 ),
                                 FooterItem(
                                   label: 'Wishlist',
-                                  url: "https://chemrevolutions.com/wishlist",
+                                   onTap: () {
+                                    Navigator.pushNamed(context, '/my-wishlist');
+                                  },
                                 ),
                               ],
                             ),
