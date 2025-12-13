@@ -69,12 +69,18 @@ class _PolicyPageBState extends State<PolicyPageB> {
         Text("Contact Us:\n"),
         Text("Email: support@example.com"),
         SizedBox(height: 8),
-        Text("Phone: +91 98765 xxxxx"),
+        Text("Phone: +91 98765 xxxx"),
         SizedBox(height: 8),
         Text("Address: Model Town, Jalandhar, Punjab"),
       ],
     ),
   ];
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

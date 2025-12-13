@@ -528,7 +528,10 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
   Widget build(BuildContext context) {
     // Footer data same as homepage to keep consistency
     final social = [
-      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
+      SocialLink(
+        icon: FontAwesomeIcons.instagram,
+        url: 'https://instagram.com',
+      ),
       SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
       SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
     ];
@@ -539,139 +542,194 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
     void contactPage() {}
 
     final columns = [
-      FooterColumn(title: 'QUICK LINKS', items: [
-        FooterItem(label: 'Home', onTap: homePage),
-        FooterItem(label: 'Categories', onTap: categoriesPage),
-        FooterItem(label: 'Product Detail', onTap: productDetailPage),
-        FooterItem(label: 'Contact Us', onTap: contactPage),
-      ]),
-      FooterColumn(title: 'CUSTOMER SERVICE', items: [
-        FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
-        FooterItem(label: 'Order Status', url: "https://chemrevolutions.com/orders"),
-        FooterItem(label: 'Wishlist', url: "https://chemrevolutions.com/wishlist"),
-      ]),
-      FooterColumn(title: 'INFORMATION', items: [
-        FooterItem(label: 'About Us', url: "https://chemrevolutions.com/about"),
-        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-      ]),
-      FooterColumn(title: 'POLICIES', items: [
-        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-        FooterItem(label: 'Terms & Conditions', url: "https://chemrevolutions.com/terms"),
-      ]),
-    ];
-
-    final body = SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          TopBannerTabs(active: AccountTab.addresses),
-
-          // Main content area
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: _maxWidth),
-                child: _loadingUser
-                    ? const Center(child: CircularProgressIndicator(color: _black))
-                    : Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(width: 3, height: 24, color: _gold),
-                              const SizedBox(width: 12),
-                              Text(
-                                "My Addresses",
-                                style: GoogleFonts.montserrat(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          ElevatedButton(
-                            onPressed: () => _openAddressDialog(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: _black,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 18,
-                                vertical: 12,
-                              ),
-                            ),
-                            child: Text(
-                              "Add New Address",
-                              style: GoogleFonts.montserrat(
-                                color: _white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          StreamBuilder<QuerySnapshot>(
-                            stream: _addressesRef()
-                                .orderBy('createdAt', descending: true)
-                                .snapshots(),
-                            builder: (context, snap) {
-                              if (!snap.hasData) {
-                                return const Center(
-                                  child: CircularProgressIndicator(color: _black),
-                                );
-                              }
-
-                              if (snap.data!.docs.isEmpty) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: Text(
-                                    "No address added yet.",
-                                    style: GoogleFonts.montserrat(fontSize: 18),
-                                  ),
-                                );
-                              }
-
-                              final list = snap.data!.docs
-                                  .map((d) => AddressModel.fromDoc(d))
-                                  .toList();
-
-                              return Column(
-                                children: list.map((a) => _addressTile(a)).toList(),
-                              );
-                            },
-                          ),
-
-                          const SizedBox(height: 60),
-                        ],
-                      ),
-              ),
-            ),
+      FooterColumn(
+        title: 'QUICK LINKS',
+        items: [
+          FooterItem(label: 'Home', onTap: homePage),
+          FooterItem(label: 'Categories', onTap: categoriesPage),
+          FooterItem(label: 'Product Detail', onTap: productDetailPage),
+          FooterItem(label: 'Contact Us', onTap: contactPage),
+        ],
+      ),
+      FooterColumn(
+        title: 'CUSTOMER SERVICE',
+        items: [
+          FooterItem(
+            label: 'My Account',
+            url: "https://chemrevolutions.com/account",
           ),
-
-          // Footer — keep consistent look with other pages
-          Theme(
-            data: ThemeData.dark().copyWith(
-              textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Montserrat'),
-            ),
-            child: ColoredBox(
-              color: const Color.fromARGB(255, 8, 8, 8),
-              child: Footer(
-                logo: FooterLogo(
-                  image: Image.asset('assets/icons/chemo.png', fit: BoxFit.contain),
-                  onTapUrl: "https://chemrevolutions.com",
-                ),
-                socialLinks: social,
-                columns: columns,
-                copyright: "© 2025 ChemRevolutions.com. All rights reserved.",
-              ),
-            ),
+          FooterItem(
+            label: 'Order Status',
+            url: "https://chemrevolutions.com/orders",
+          ),
+          FooterItem(
+            label: 'Wishlist',
+            url: "https://chemrevolutions.com/wishlist",
           ),
         ],
+      ),
+      FooterColumn(
+        title: 'INFORMATION',
+        items: [
+          FooterItem(
+            label: 'About Us',
+            url: "https://chemrevolutions.com/about",
+          ),
+          FooterItem(
+            label: 'Privacy Policy',
+            url: "https://chemrevolutions.com/privacy",
+          ),
+          FooterItem(
+            label: 'Data Collection',
+            url: "https://chemrevolutions.com/data",
+          ),
+        ],
+      ),
+      FooterColumn(
+        title: 'POLICIES',
+        items: [
+          FooterItem(
+            label: 'Privacy Policy',
+            url: "https://chemrevolutions.com/privacy",
+          ),
+          FooterItem(
+            label: 'Data Collection',
+            url: "https://chemrevolutions.com/data",
+          ),
+          FooterItem(
+            label: 'Terms & Conditions',
+            url: "https://chemrevolutions.com/terms",
+          ),
+        ],
+      ),
+    ];
+
+    final body = Container(
+      color: Colors.white, // <<< FIX: WHITE BACKGROUND
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TopBannerTabs(active: AccountTab.addresses),
+
+            // Main content area
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: _maxWidth),
+                  child: _loadingUser
+                      ? const Center(
+                          child: CircularProgressIndicator(color: _black),
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(width: 3, height: 24, color: _gold),
+                                const SizedBox(width: 12),
+                                Text(
+                                  "My Addresses",
+                                  style: GoogleFonts.montserrat(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            ElevatedButton(
+                              onPressed: () => _openAddressDialog(),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _black,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 12,
+                                ),
+                              ),
+                              child: Text(
+                                "Add New Address",
+                                style: GoogleFonts.montserrat(
+                                  color: _white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            StreamBuilder<QuerySnapshot>(
+                              stream: _addressesRef()
+                                  .orderBy('createdAt', descending: true)
+                                  .snapshots(),
+                              builder: (context, snap) {
+                                if (!snap.hasData) {
+                                  return const Center(
+                                    child: CircularProgressIndicator(
+                                      color: _black,
+                                    ),
+                                  );
+                                }
+
+                                if (snap.data!.docs.isEmpty) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 10),
+                                    child: Text(
+                                      "No address added yet.",
+                                      style: GoogleFonts.montserrat(
+                                        fontSize: 18,
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                final list = snap.data!.docs
+                                    .map((d) => AddressModel.fromDoc(d))
+                                    .toList();
+
+                                return Column(
+                                  children: list
+                                      .map((a) => _addressTile(a))
+                                      .toList(),
+                                );
+                              },
+                            ),
+
+                            const SizedBox(height: 60),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+
+            // Footer — keep consistent look with other pages
+            Theme(
+              data: ThemeData.dark().copyWith(
+                textTheme: ThemeData.dark().textTheme.apply(
+                  fontFamily: 'Montserrat',
+                ),
+              ),
+              child: ColoredBox(
+                color: const Color.fromARGB(255, 8, 8, 8),
+                child: Footer(
+                  logo: FooterLogo(
+                    image: Image.asset(
+                      'assets/icons/chemo.png',
+                      fit: BoxFit.contain,
+                    ),
+                    onTapUrl: "https://chemrevolutions.com",
+                  ),
+                  socialLinks: social,
+                  columns: columns,
+                  copyright: "© 2025 ChemRevolutions.com. All rights reserved.",
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
 
