@@ -30,7 +30,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp( 
+   
+  
       title: 'E-Commerce Catalog',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
