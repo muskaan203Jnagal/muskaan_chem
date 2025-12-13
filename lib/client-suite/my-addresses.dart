@@ -539,69 +539,35 @@ class _MyAddressesPageState extends State<MyAddressesPage> {
     void homePage() {}
     void categoriesPage() {}
     void productDetailPage() {}
-    void contactPage() {}
 
     final columns = [
-      FooterColumn(
-        title: 'QUICK LINKS',
-        items: [
-          FooterItem(label: 'Home', onTap: homePage),
-          FooterItem(label: 'Categories', onTap: categoriesPage),
-          FooterItem(label: 'Product Detail', onTap: productDetailPage),
-          FooterItem(label: 'Contact Us', onTap: contactPage),
-        ],
-      ),
-      FooterColumn(
-        title: 'CUSTOMER SERVICE',
-        items: [
-          FooterItem(
-            label: 'My Account',
-            url: "https://chemrevolutions.com/account",
-          ),
-          FooterItem(
-            label: 'Order Status',
-            url: "https://chemrevolutions.com/orders",
-          ),
-          FooterItem(
-            label: 'Wishlist',
-            url: "https://chemrevolutions.com/wishlist",
-          ),
-        ],
-      ),
-      FooterColumn(
-        title: 'INFORMATION',
-        items: [
-          FooterItem(
-            label: 'About Us',
-            url: "https://chemrevolutions.com/about",
-          ),
-          FooterItem(
-            label: 'Privacy Policy',
-            url: "https://chemrevolutions.com/privacy",
-          ),
-          FooterItem(
-            label: 'Data Collection',
-            url: "https://chemrevolutions.com/data",
-          ),
-        ],
-      ),
-      FooterColumn(
-        title: 'POLICIES',
-        items: [
-          FooterItem(
-            label: 'Privacy Policy',
-            url: "https://chemrevolutions.com/privacy",
-          ),
-          FooterItem(
-            label: 'Data Collection',
-            url: "https://chemrevolutions.com/data",
-          ),
-          FooterItem(
-            label: 'Terms & Conditions',
-            url: "https://chemrevolutions.com/terms",
-          ),
-        ],
-      ),
+      FooterColumn(title: 'QUICK LINKS', items: [
+        FooterItem(label: 'Home', onTap: homePage),
+        FooterItem(label: 'Categories', onTap: categoriesPage),
+        FooterItem(label: 'Product Detail', onTap: productDetailPage),
+  FooterItem(
+  label: 'Contact Us',
+  onTap: () {
+    Navigator.pushNamed(context, '/contact');
+  },
+),
+
+      ]),
+      FooterColumn(title: 'CUSTOMER SERVICE', items: [
+        FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
+        FooterItem(label: 'Order Status', url: "https://chemrevolutions.com/orders"),
+        FooterItem(label: 'Wishlist', url: "https://chemrevolutions.com/wishlist"),
+      ]),
+      FooterColumn(title: 'INFORMATION', items: [
+        FooterItem(label: 'About Us', url: "https://chemrevolutions.com/about"),
+        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
+        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
+      ]),
+      FooterColumn(title: 'POLICIES', items: [
+        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
+        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
+        FooterItem(label: 'Terms & Conditions', url: "https://chemrevolutions.com/terms"),
+      ]),
     ];
 
     final body = Container(

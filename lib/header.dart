@@ -28,11 +28,8 @@ class AppScaffold extends StatefulWidget {
   final String currentPage;
   final Widget body;
 
-  const AppScaffold({
-    Key? key,
-    required this.currentPage,
-    required this.body,
-  }) : super(key: key);
+  const AppScaffold({Key? key, required this.currentPage, required this.body})
+    : super(key: key);
 
   @override
   State<AppScaffold> createState() => _AppScaffoldState();
@@ -67,10 +64,7 @@ class _AppScaffoldState extends State<AppScaffold>
       vsync: this,
     );
 
-    _drawerSlideAnimation = Tween<double>(
-      begin: -1.0,
-      end: 0.0,
-    ).animate(
+    _drawerSlideAnimation = Tween<double>(begin: -1.0, end: 0.0).animate(
       CurvedAnimation(
         parent: _drawerAnimationController!,
         curve: Curves.easeOutCubic,
@@ -108,7 +102,6 @@ class _AppScaffoldState extends State<AppScaffold>
       _drawerAnimationController?.reverse();
     }
   }
-
   void _navigateToPage(String page) {
     if (_isDrawerOpen) {
       setState(() {
@@ -414,7 +407,10 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return child;
   }
 
@@ -569,6 +565,7 @@ class _AppHeaderState extends State<AppHeader> {
                     text: 'ABOUT',
                     isActive: widget.currentPage == 'ABOUT',
                     onTap: () => widget.onNavigate('ABOUT'),
+                   
                     fontSize: 13,
                   ),
                   const SizedBox(width: 28),
@@ -629,12 +626,15 @@ class _AppHeaderState extends State<AppHeader> {
                     isActive: widget.currentPage == 'HOME',
                     onTap: () => widget.onNavigate('HOME'),
                   ),
+                      
+                  
                   const SizedBox(width: 40),
-                  _NavLink(
+                    _NavLink(
                     text: 'ABOUT',
                     isActive: widget.currentPage == 'ABOUT',
                     onTap: () => widget.onNavigate('ABOUT'),
                   ),
+
                   const SizedBox(width: 40),
                   _NavLink(
                     text: 'GETVERIFIED',
@@ -735,11 +735,7 @@ class _AppHeaderState extends State<AppHeader> {
                 _searchController.clear();
               });
             },
-            child: Icon(
-              Icons.close,
-              color: Colors.white,
-              size: closeIconSize,
-            ),
+            child: Icon(Icons.close, color: Colors.white, size: closeIconSize),
           ),
         ),
       ],

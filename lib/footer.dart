@@ -7,95 +7,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 
-class MyFooter extends StatelessWidget {
-  const MyFooter({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ChemRevolutions Footer',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color.fromARGB(255, 8, 8, 8),
-        textTheme: GoogleFonts.montserratTextTheme(ThemeData.dark().textTheme),
-      ),
-      home: const Scaffold(body: FooterDemoPage()),
-    );
-  }
-}
-
-class FooterDemoPage extends StatelessWidget {
-  const FooterDemoPage({super.key});
-
-  // ----------- INTERNAL PAGE FUNCTIONS -------------
-  void homePage() {
-    print("Go to Home Page");
-  }
-
-  void categoriesPage() {
-    print("Go to Categories Page");
-  }
-
-  void productDetailPage() {
-    print("Go to Product Detail Page");
-  }
-
-  void contactPage() {
-    print("Go to Contact Page");
-  }
-  // --------------------------------------------------
-
-  @override
-  Widget build(BuildContext context) {
-    final social = [
-      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
-      SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
-      SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
-    ];
-
-    final columns = [
-      FooterColumn(title: 'QUICK LINKS', items: [
-        FooterItem(label: 'Home', onTap: homePage),
-        FooterItem(label: 'Categories', onTap: categoriesPage),
-        FooterItem(label: 'Product Detail', onTap: productDetailPage),
-        FooterItem(label: 'Contact Us', onTap: contactPage),
-      ]),
-      FooterColumn(title: 'CUSTOMER SERVICE', items: [
-        FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
-        FooterItem(label: 'Order Status', url: "https://chemrevolutions.com/orders"),
-        FooterItem(label: 'Wishlist', url: "https://chemrevolutions.com/wishlist"),
-      ]),
-      FooterColumn(title: 'INFORMATION', items: [
-        FooterItem(label: 'About Us', url: "https://chemrevolutions.com/about"),
-        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-      ]),
-      FooterColumn(title: 'POLICIES', items: [
-        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-        FooterItem(label: 'Terms & Conditions', url: "https://chemrevolutions.com/terms"),
-      ]),
-    ];
-
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          const SizedBox(height: 50),
-          Footer(
-            logo: FooterLogo(
-              image: Image.asset('assets/icons/chemo.png', fit: BoxFit.contain),
-              onTapUrl: "https://chemrevolutions.com",
-            ),
-            socialLinks: social,
-            columns: columns,
-            copyright: "© 2025 ChemRevolutions.com. All rights reserved.",
-          )
-        ],
-      ),
-    );
-  }
-}
-
 // MODELS ---------------------------------------------
 
 class FooterItem {
@@ -184,10 +95,7 @@ class Footer extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 260,
-          child: _brand(muted, false),
-        ),
+        SizedBox(width: 260, child: _brand(muted, false)),
         const SizedBox(width: 20),
         Expanded(
           child: Row(
@@ -218,10 +126,7 @@ class Footer extends StatelessWidget {
           spacing: 30,
           runSpacing: 25,
           children: columns
-              .map((c) => SizedBox(
-                    width: 200,
-                    child: _column(c, muted, false),
-                  ))
+              .map((c) => SizedBox(width: 200, child: _column(c, muted, false)))
               .toList(),
         ),
       ],
@@ -239,13 +144,9 @@ class Footer extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _column(columns[0], muted, true),
-            ),
+            Expanded(child: _column(columns[0], muted, true)),
             const SizedBox(width: 16),
-            Expanded(
-              child: _column(columns[1], muted, true),
-            ),
+            Expanded(child: _column(columns[1], muted, true)),
           ],
         ),
         const SizedBox(height: 20),
@@ -253,13 +154,9 @@ class Footer extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _column(columns[2], muted, true),
-            ),
+            Expanded(child: _column(columns[2], muted, true)),
             const SizedBox(width: 16),
-            Expanded(
-              child: _column(columns[3], muted, true),
-            ),
+            Expanded(child: _column(columns[3], muted, true)),
           ],
         ),
       ],
@@ -270,8 +167,9 @@ class Footer extends StatelessWidget {
     return Transform.translate(
       offset: const Offset(0, -24),
       child: Column(
-        crossAxisAlignment:
-            isCentered ? CrossAxisAlignment.center : CrossAxisAlignment.center,
+        crossAxisAlignment: isCentered
+            ? CrossAxisAlignment.center
+            : CrossAxisAlignment.center,
         children: [
           GestureDetector(
             onTap: logo.onTapUrl == null
@@ -328,7 +226,8 @@ class Footer extends StatelessWidget {
           column.title,
           textAlign: TextAlign.center,
           style: GoogleFonts.montserrat(
-            color: Colors.white, // FIX: Explicitly set to white to resolve the greyish color issue
+            color: Colors
+                .white, // FIX: Explicitly set to white to resolve the greyish color issue
             fontWeight: FontWeight.bold,
             fontSize: isMobile ? 14 : 16,
           ),
@@ -341,7 +240,8 @@ class Footer extends StatelessWidget {
               label: item.label,
               mutedColor: muted,
               isMobile: isMobile,
-              onTap: item.onTap ??
+              onTap:
+                  item.onTap ??
                   () async {
                     if (item.url != null) await _openUrl(item.url!);
                   },
@@ -390,14 +290,10 @@ class _LinkTextState extends State<LinkText> {
             color: hover
                 ? const Color.fromARGB(255, 209, 209, 170)
                 : widget.mutedColor,
-            decoration:
-                hover ? TextDecoration.underline : TextDecoration.none,
+            decoration: hover ? TextDecoration.underline : TextDecoration.none,
             fontSize: widget.isMobile ? 13 : 15,
           ),
-          child: Text(
-            widget.label,
-            textAlign: TextAlign.center,
-          ),
+          child: Text(widget.label, textAlign: TextAlign.center),
         ),
       ),
     );
@@ -448,11 +344,7 @@ class _HoverIconState extends State<HoverIcon> {
             child: AnimatedScale(
               scale: hover ? 1.15 : 1.0,
               duration: const Duration(milliseconds: 150),
-              child: FaIcon(
-                widget.icon,
-                size: iconSize,
-                color: Colors.white,
-              ),
+              child: FaIcon(widget.icon, size: iconSize, color: Colors.white),
             ),
           ),
         ),
@@ -468,11 +360,3 @@ Future<void> _openUrl(String url) async {
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
-void main() {
-  // It is recommended to initialize Flutter bindings before running the app
-  // if you might need to load assets or perform platform-specific calls early.
-  // Although not strictly necessary for this simple example, it's good practice.
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  runApp(const MyFooter());
-}

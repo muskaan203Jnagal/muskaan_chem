@@ -754,14 +754,19 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
     void homePage() { print("Go to Home Page"); }
     void categoriesPage() { print("Go to Categories Page"); }
     void productDetailPage() { print("Go to Product Detail Page"); }
-    void contactPage() { print("Go to Contact Page"); }
 
     final columns = [
       FooterColumn(title: 'QUICK LINKS', items: [
         FooterItem(label: 'Home', onTap: homePage),
         FooterItem(label: 'Categories', onTap: categoriesPage),
         FooterItem(label: 'Product Detail', onTap: productDetailPage),
-        FooterItem(label: 'Contact Us', onTap: contactPage),
+  FooterItem(
+  label: 'Contact Us',
+  onTap: () {
+    Navigator.pushNamed(context, '/contact');
+  },
+),
+
       ]),
       FooterColumn(title: 'CUSTOMER SERVICE', items: [
         FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
