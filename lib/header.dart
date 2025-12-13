@@ -102,6 +102,7 @@ class _AppScaffoldState extends State<AppScaffold>
       _drawerAnimationController?.reverse();
     }
   }
+
   void _navigateToPage(String page) {
     if (_isDrawerOpen) {
       setState(() {
@@ -293,21 +294,19 @@ class _AppScaffoldState extends State<AppScaffold>
                 ),
               ),
 
-              SliverFillRemaining(
-                child: widget.body,
-              ),
+              SliverFillRemaining(child: widget.body),
             ],
           ),
 
-          if ((isMobile || isTablet) &&
-              _drawerAnimationController != null)
+          if ((isMobile || isTablet) && _drawerAnimationController != null)
             Positioned.fill(
               child: IgnorePointer(
                 ignoring: !_isDrawerOpen,
                 child: AnimatedBuilder(
                   animation: _drawerAnimationController!,
                   builder: (context, child) {
-                    final dy = _drawerSlideAnimation!.value *
+                    final dy =
+                        _drawerSlideAnimation!.value *
                         MediaQuery.of(context).size.height;
                     final scrimOpacity =
                         _drawerAnimationController!.value * 0.7;
@@ -565,7 +564,7 @@ class _AppHeaderState extends State<AppHeader> {
                     text: 'ABOUT',
                     isActive: widget.currentPage == 'ABOUT',
                     onTap: () => widget.onNavigate('ABOUT'),
-                   
+
                     fontSize: 13,
                   ),
                   const SizedBox(width: 28),
@@ -626,10 +625,9 @@ class _AppHeaderState extends State<AppHeader> {
                     isActive: widget.currentPage == 'HOME',
                     onTap: () => widget.onNavigate('HOME'),
                   ),
-                      
-                  
+
                   const SizedBox(width: 40),
-                    _NavLink(
+                  _NavLink(
                     text: 'ABOUT',
                     isActive: widget.currentPage == 'ABOUT',
                     onTap: () => widget.onNavigate('ABOUT'),
@@ -794,11 +792,7 @@ class _IconButton extends StatefulWidget {
   final VoidCallback? onTap;
   final double? size;
 
-  const _IconButton({
-    required this.icon,
-    this.onTap,
-    this.size,
-  });
+  const _IconButton({required this.icon, this.onTap, this.size});
 
   @override
   State<_IconButton> createState() => _IconButtonState();

@@ -56,6 +56,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
     super.initState();
     _tabController = TabController(length: 4, vsync: this, initialIndex: 3);
     _loadUserOnce();
+    Future.delayed(const Duration(seconds: 1), () async {
+      if (mounted) await _syncEmailIfUpdated();
+    });
   }
 
   @override
@@ -114,9 +117,13 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
       final reloaded = _auth.currentUser!;
       _uid = reloaded.uid;
 
+      // NOW safe to sync email
+      await _syncEmailIfUpdated();
+
       // provider detection
-      _hasPasswordProvider = reloaded.providerData
-          .any((p) => p.providerId == 'password');
+      _hasPasswordProvider = reloaded.providerData.any(
+        (p) => p.providerId == 'password',
+      );
 
       final docRef = _db.collection('users').doc(_uid);
       final snap = await docRef.get();
@@ -150,15 +157,16 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
       _email.text = email;
       avatarLetter = letter.isNotEmpty ? letter : avatarLetter;
 
-      if (mounted) setState(() {
-        _loading = false;
-      });
+      if (mounted)
+        setState(() {
+          _loading = false;
+        });
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to load user data: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Failed to load user data: $e")));
       }
     }
   }
@@ -187,17 +195,34 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
       } catch (_) {}
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Updated Successfully")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Updated Successfully")));
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Update failed")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Update failed")));
     } finally {
       if (!mounted) return;
       setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _syncEmailIfUpdated() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    await user.reload();
+    final refreshed = _auth.currentUser;
+
+    if (refreshed?.email != null && refreshed!.email != _email.text.trim()) {
+      _email.text = refreshed.email!;
+
+      await _db.collection('users').doc(_uid).set({
+        "email": refreshed.email,
+        "updatedAt": FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     }
   }
 
@@ -236,10 +261,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
             const SizedBox(height: 14),
             content,
             const SizedBox(height: 18),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: actions,
-            ),
+            Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
           ],
         ),
       ),
@@ -282,93 +304,101 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return StatefulBuilder(builder: (context, setStateDialog) {
-          return _styledDialog(
-            title: _dialogTitle("Change Email"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: newEmailCtrl,
-                  decoration: _popupInputDec(hint: "New email"),
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return _styledDialog(
+              title: _dialogTitle("Change Email"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: newEmailCtrl,
+                    decoration: _popupInputDec(hint: "New email"),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: passwordCtrl,
+                    obscureText: true,
+                    decoration: _popupInputDec(hint: "Current password"),
+                  ),
+                ],
+              ),
+              actions: [
+                // CANCEL — black text
+                TextButton(
+                  style: TextButton.styleFrom(foregroundColor: _black),
+                  onPressed: _busy ? null : () => Navigator.pop(context),
+                  child: Text("Cancel", style: GoogleFonts.montserrat()),
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: passwordCtrl,
-                  obscureText: true,
-                  decoration: _popupInputDec(hint: "Current password"),
+                const SizedBox(width: 8),
+                // SEND — filled black
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _black,
+                    foregroundColor: _white,
+                  ),
+                  onPressed: _busy
+                      ? null
+                      : () async {
+                          final newEmail = newEmailCtrl.text.trim();
+                          final password = passwordCtrl.text;
+
+                          if (newEmail.isEmpty || !newEmail.contains("@")) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Enter a valid email"),
+                              ),
+                            );
+                            return;
+                          }
+                          if (password.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Enter password for verification",
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          setStateDialog(() => _busy = true);
+
+                          try {
+                            final user = _auth.currentUser!;
+                            final cred = EmailAuthProvider.credential(
+                              email: user.email ?? "",
+                              password: password,
+                            );
+                            await user.reauthenticateWithCredential(cred);
+                            await user.verifyBeforeUpdateEmail(newEmail);
+
+                            if (!mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Verification sent. After verifying, return here and reload the page.",
+                                ),
+                              ),
+                            );
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Failed to request email change"),
+                              ),
+                            );
+                          } finally {
+                            if (mounted) setStateDialog(() => _busy = false);
+                          }
+                        },
+                  child: Text("Send", style: GoogleFonts.montserrat()),
                 ),
               ],
-            ),
-            actions: [
-              // CANCEL — black text
-              TextButton(
-                style: TextButton.styleFrom(foregroundColor: _black),
-                onPressed: _busy ? null : () => Navigator.pop(context),
-                child: Text("Cancel", style: GoogleFonts.montserrat()),
-              ),
-              const SizedBox(width: 8),
-              // SEND — filled black
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _black,
-                  foregroundColor: _white,
-                ),
-                onPressed: _busy
-                    ? null
-                    : () async {
-                        final newEmail = newEmailCtrl.text.trim();
-                        final password = passwordCtrl.text;
-
-                        if (newEmail.isEmpty || !newEmail.contains("@")) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Enter a valid email")),
-                          );
-                          return;
-                        }
-                        if (password.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content:
-                                    Text("Enter password for verification")),
-                          );
-                          return;
-                        }
-
-                        setStateDialog(() => _busy = true);
-
-                        try {
-                          final user = _auth.currentUser!;
-                          final cred = EmailAuthProvider.credential(
-                            email: user.email ?? "",
-                            password: password,
-                          );
-                          await user.reauthenticateWithCredential(cred);
-                          await user.verifyBeforeUpdateEmail(newEmail);
-
-                          if (!mounted) return;
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text("Verification sent to new email."),
-                            ),
-                          );
-                        } catch (e) {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text("Failed to request email change")),
-                          );
-                        } finally {
-                          if (mounted) setStateDialog(() => _busy = false);
-                        }
-                      },
-                child: Text("Send", style: GoogleFonts.montserrat()),
-              ),
-            ],
-          );
-        });
+            );
+          },
+        );
       },
     );
   }
@@ -383,124 +413,146 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return StatefulBuilder(builder: (context, setStateDialog) {
-          return _styledDialog(
-            title: _dialogTitle("Create Password"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  "You signed in with Google. Create a password to enable email/password login.",
-                  style: GoogleFonts.montserrat(fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: newCtrl,
-                  obscureText: true,
-                  decoration: _popupInputDec(hint: "New password (min 6 chars)"),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: confirmCtrl,
-                  obscureText: true,
-                  decoration: _popupInputDec(hint: "Confirm password"),
-                ),
-              ],
-            ),
-            actions: [
-              // Cancel — black text
-              TextButton(
-                style: TextButton.styleFrom(foregroundColor: _black),
-                onPressed: _busy ? null : () => Navigator.pop(context),
-                child: Text("Cancel", style: GoogleFonts.montserrat()),
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return _styledDialog(
+              title: _dialogTitle("Create Password"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "You signed in with Google. Create a password to enable email/password login.",
+                    style: GoogleFonts.montserrat(fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: newCtrl,
+                    obscureText: true,
+                    decoration: _popupInputDec(
+                      hint: "New password (min 6 chars)",
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: confirmCtrl,
+                    obscureText: true,
+                    decoration: _popupInputDec(hint: "Confirm password"),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              // Create — filled black
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _black,
-                  foregroundColor: _white,
+              actions: [
+                // Cancel — black text
+                TextButton(
+                  style: TextButton.styleFrom(foregroundColor: _black),
+                  onPressed: _busy ? null : () => Navigator.pop(context),
+                  child: Text("Cancel", style: GoogleFonts.montserrat()),
                 ),
-                onPressed: _busy
-                    ? null
-                    : () async {
-                        final p1 = newCtrl.text.trim();
-                        final p2 = confirmCtrl.text.trim();
+                const SizedBox(width: 8),
+                // Create — filled black
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _black,
+                    foregroundColor: _white,
+                  ),
+                  onPressed: _busy
+                      ? null
+                      : () async {
+                          final p1 = newCtrl.text.trim();
+                          final p2 = confirmCtrl.text.trim();
 
-                        if (p1.length < 6) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    "Password must be at least 6 characters")),
-                          );
-                          return;
-                        }
-                        if (p1 != p2) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Passwords do not match")),
-                          );
-                          return;
-                        }
-
-                        setStateDialog(() => _busy = true);
-
-                        try {
-                          final user = _auth.currentUser!;
-                          final email = user.email;
-                          if (email == null || email.isEmpty) {
-                            if (!mounted) return;
+                          if (p1.length < 6) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Missing email on account.")),
+                              const SnackBar(
+                                content: Text(
+                                  "Password must be at least 6 characters",
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          if (p1 != p2) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Passwords do not match"),
+                              ),
                             );
                             return;
                           }
 
-                          // Link the email/password credential to current user
-                          final credential = EmailAuthProvider.credential(
-                              email: email, password: p1);
-                          final result = await user.linkWithCredential(credential);
+                          setStateDialog(() => _busy = true);
 
-                          // update Firestore updatedAt (and ensure email saved)
-                          await _db.collection('users').doc(result.user!.uid).set({
-                            "email": email,
-                            "updatedAt": FieldValue.serverTimestamp(),
-                          }, SetOptions(merge: true));
+                          try {
+                            final user = _auth.currentUser!;
+                            final email = user.email;
+                            if (email == null || email.isEmpty) {
+                              if (!mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Missing email on account."),
+                                ),
+                              );
+                              return;
+                            }
 
-                          // refresh local state
-                          await _loadUserOnce();
+                            // Link the email/password credential to current user
+                            final credential = EmailAuthProvider.credential(
+                              email: email,
+                              password: p1,
+                            );
+                            final result = await user.linkWithCredential(
+                              credential,
+                            );
 
-                          if (!mounted) return;
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Password created successfully")),
-                          );
-                        } on FirebaseAuthException catch (e) {
-                          if (!mounted) return;
-                          String msg = "Failed to create password";
-                          if (e.code == 'provider-already-linked') {
-                            msg = "Password provider already linked.";
-                          } else if (e.code == 'credential-already-in-use') {
-                            msg = "This email already has a password account.";
-                          } else if (e.code == 'requires-recent-login') {
-                            msg = "Please re-login and try again.";
+                            // update Firestore updatedAt (and ensure email saved)
+                            await _db
+                                .collection('users')
+                                .doc(result.user!.uid)
+                                .set({
+                                  "email": email,
+                                  "updatedAt": FieldValue.serverTimestamp(),
+                                }, SetOptions(merge: true));
+
+                            // refresh local state
+                            await _loadUserOnce();
+
+                            if (!mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Password created successfully"),
+                              ),
+                            );
+                          } on FirebaseAuthException catch (e) {
+                            if (!mounted) return;
+                            String msg = "Failed to create password";
+                            if (e.code == 'provider-already-linked') {
+                              msg = "Password provider already linked.";
+                            } else if (e.code == 'credential-already-in-use') {
+                              msg =
+                                  "This email already has a password account.";
+                            } else if (e.code == 'requires-recent-login') {
+                              msg = "Please re-login and try again.";
+                            }
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(msg)));
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Failed to create password"),
+                              ),
+                            );
+                          } finally {
+                            if (mounted) setStateDialog(() => _busy = false);
                           }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(msg)),
-                          );
-                        } catch (e) {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Failed to create password")),
-                          );
-                        } finally {
-                          if (mounted) setStateDialog(() => _busy = false);
-                        }
-                      },
-                child: Text("Create", style: GoogleFonts.montserrat()),
-              ),
-            ],
-          );
-        });
+                        },
+                  child: Text("Create", style: GoogleFonts.montserrat()),
+                ),
+              ],
+            );
+          },
+        );
       },
     );
   }
@@ -516,118 +568,134 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return StatefulBuilder(builder: (context, setStateDialog) {
-          return _styledDialog(
-            title: _dialogTitle("Change Password"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!_hasPasswordProvider)
-                  Text(
-                    "You don't have a password yet. Use Create Password first.",
-                    style: GoogleFonts.montserrat(fontSize: 13),
-                  ),
-                if (_hasPasswordProvider) ...[
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return _styledDialog(
+              title: _dialogTitle("Change Password"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!_hasPasswordProvider)
+                    Text(
+                      "You don't have a password yet. Use Create Password first.",
+                      style: GoogleFonts.montserrat(fontSize: 13),
+                    ),
+                  if (_hasPasswordProvider) ...[
+                    TextField(
+                      controller: currentCtrl,
+                      obscureText: true,
+                      decoration: _popupInputDec(hint: "Current password"),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   TextField(
-                    controller: currentCtrl,
+                    controller: newCtrl,
                     obscureText: true,
-                    decoration: _popupInputDec(hint: "Current password"),
+                    decoration: _popupInputDec(
+                      hint: "New password (min 6 chars)",
+                    ),
                   ),
                   const SizedBox(height: 12),
+                  TextField(
+                    controller: confirmCtrl,
+                    obscureText: true,
+                    decoration: _popupInputDec(hint: "Confirm new password"),
+                  ),
                 ],
-                TextField(
-                  controller: newCtrl,
-                  obscureText: true,
-                  decoration: _popupInputDec(hint: "New password (min 6 chars)"),
+              ),
+              actions: [
+                // Cancel — black text
+                TextButton(
+                  style: TextButton.styleFrom(foregroundColor: _black),
+                  onPressed: _busy ? null : () => Navigator.pop(context),
+                  child: Text("Cancel", style: GoogleFonts.montserrat()),
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: confirmCtrl,
-                  obscureText: true,
-                  decoration: _popupInputDec(hint: "Confirm new password"),
+                const SizedBox(width: 8),
+                // Save — filled black
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _black,
+                    foregroundColor: _white,
+                  ),
+                  onPressed: _busy
+                      ? null
+                      : () async {
+                          final old = currentCtrl.text.trim();
+                          final p1 = newCtrl.text.trim();
+                          final p2 = confirmCtrl.text.trim();
+
+                          if (p1.length < 6) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "New password must be at least 6 characters",
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          if (p1 != p2) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Passwords do not match"),
+                              ),
+                            );
+                            return;
+                          }
+
+                          setStateDialog(() => _busy = true);
+
+                          try {
+                            final user = _auth.currentUser!;
+                            if (_hasPasswordProvider) {
+                              // reauthenticate with current password
+                              final cred = EmailAuthProvider.credential(
+                                email: user.email ?? "",
+                                password: old,
+                              );
+                              await user.reauthenticateWithCredential(cred);
+                              await user.updatePassword(p1);
+
+                              if (!mounted) return;
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Password updated"),
+                                ),
+                              );
+                            } else {
+                              // No password provider: guide user to create one
+                              if (!mounted) return;
+                              Navigator.pop(context);
+                              await _openCreatePasswordDialog();
+                            }
+                          } on FirebaseAuthException catch (e) {
+                            if (!mounted) return;
+                            String msg = "Failed to update password";
+                            if (e.code == 'wrong-password')
+                              msg = "Current password is incorrect";
+                            if (e.code == 'requires-recent-login')
+                              msg = "Please re-login and try again";
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(msg)));
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Failed to update password"),
+                              ),
+                            );
+                          } finally {
+                            if (mounted) setStateDialog(() => _busy = false);
+                          }
+                        },
+                  child: Text("Save", style: GoogleFonts.montserrat()),
                 ),
               ],
-            ),
-            actions: [
-              // Cancel — black text
-              TextButton(
-                style: TextButton.styleFrom(foregroundColor: _black),
-                onPressed: _busy ? null : () => Navigator.pop(context),
-                child: Text("Cancel", style: GoogleFonts.montserrat()),
-              ),
-              const SizedBox(width: 8),
-              // Save — filled black
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _black,
-                  foregroundColor: _white,
-                ),
-                onPressed: _busy
-                    ? null
-                    : () async {
-                        final old = currentCtrl.text.trim();
-                        final p1 = newCtrl.text.trim();
-                        final p2 = confirmCtrl.text.trim();
-
-                        if (p1.length < 6) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    "New password must be at least 6 characters")),
-                          );
-                          return;
-                        }
-                        if (p1 != p2) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Passwords do not match")),
-                          );
-                          return;
-                        }
-
-                        setStateDialog(() => _busy = true);
-
-                        try {
-                          final user = _auth.currentUser!;
-                          if (_hasPasswordProvider) {
-                            // reauthenticate with current password
-                            final cred = EmailAuthProvider.credential(
-                                email: user.email ?? "", password: old);
-                            await user.reauthenticateWithCredential(cred);
-                            await user.updatePassword(p1);
-
-                            if (!mounted) return;
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Password updated")),
-                            );
-                          } else {
-                            // No password provider: guide user to create one
-                            if (!mounted) return;
-                            Navigator.pop(context);
-                            await _openCreatePasswordDialog();
-                          }
-                        } on FirebaseAuthException catch (e) {
-                          if (!mounted) return;
-                          String msg = "Failed to update password";
-                          if (e.code == 'wrong-password') msg = "Current password is incorrect";
-                          if (e.code == 'requires-recent-login') msg = "Please re-login and try again";
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(msg)),
-                          );
-                        } catch (e) {
-                          if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Failed to update password")),
-                          );
-                        } finally {
-                          if (mounted) setStateDialog(() => _busy = false);
-                        }
-                      },
-                child: Text("Save", style: GoogleFonts.montserrat()),
-              ),
-            ],
-          );
-        });
+            );
+          },
+        );
       },
     );
   }
@@ -666,7 +734,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
     if (result == true) {
       await FirebaseAuth.instance.signOut();
       if (!mounted) return;
-      Navigator.pop(context);
+
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     }
   }
 
@@ -694,8 +763,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
               horizontal: 12,
               vertical: 14,
             ),
-            border:
-                OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
               borderSide: const BorderSide(color: _black),
@@ -726,18 +794,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
     );
   }
 
-  Widget _placeholder(String text) {
-    return Center(
-      child: Text(
-        "$text Page Coming Soon...",
-        style: GoogleFonts.montserrat(
-          fontSize: 20,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
-
   // ---------------- BUILD ----------------
   @override
   Widget build(BuildContext context) {
@@ -746,43 +802,92 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
 
     // Footer data same as homepage to keep consistency
     final social = [
-      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
+      SocialLink(
+        icon: FontAwesomeIcons.instagram,
+        url: 'https://instagram.com',
+      ),
       SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
       SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
     ];
 
-    void homePage() { print("Go to Home Page"); }
-    void categoriesPage() { print("Go to Categories Page"); }
-    void productDetailPage() { print("Go to Product Detail Page"); }
+    void homePage() {
+      print("Go to Home Page");
+    }
+
+    void categoriesPage() {
+      print("Go to Categories Page");
+    }
+
+    void productDetailPage() {
+      print("Go to Product Detail Page");
+    }
 
     final columns = [
-      FooterColumn(title: 'QUICK LINKS', items: [
-        FooterItem(label: 'Home', onTap: homePage),
-        FooterItem(label: 'Categories', onTap: categoriesPage),
-        FooterItem(label: 'Product Detail', onTap: productDetailPage),
-  FooterItem(
-  label: 'Contact Us',
-  onTap: () {
-    Navigator.pushNamed(context, '/contact');
-  },
-),
-
-      ]),
-      FooterColumn(title: 'CUSTOMER SERVICE', items: [
-        FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
-        FooterItem(label: 'Order Status', url: "https://chemrevolutions.com/orders"),
-        FooterItem(label: 'Wishlist', url: "https://chemrevolutions.com/wishlist"),
-      ]),
-      FooterColumn(title: 'INFORMATION', items: [
-        FooterItem(label: 'About Us', url: "https://chemrevolutions.com/about"),
-        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-      ]),
-      FooterColumn(title: 'POLICIES', items: [
-        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-        FooterItem(label: 'Terms & Conditions', url: "https://chemrevolutions.com/terms"),
-      ]),
+      FooterColumn(
+        title: 'QUICK LINKS',
+        items: [
+          FooterItem(label: 'Home', onTap: homePage),
+          FooterItem(label: 'Categories', onTap: categoriesPage),
+          FooterItem(label: 'Product Detail', onTap: productDetailPage),
+          FooterItem(
+            label: 'Contact Us',
+            onTap: () {
+              Navigator.pushNamed(context, '/contact');
+            },
+          ),
+        ],
+      ),
+      FooterColumn(
+        title: 'CUSTOMER SERVICE',
+        items: [
+          FooterItem(
+            label: 'My Account',
+            url: "https://chemrevolutions.com/account",
+          ),
+          FooterItem(
+            label: 'Order Status',
+            url: "https://chemrevolutions.com/orders",
+          ),
+          FooterItem(
+            label: 'Wishlist',
+            url: "https://chemrevolutions.com/wishlist",
+          ),
+        ],
+      ),
+      FooterColumn(
+        title: 'INFORMATION',
+        items: [
+          FooterItem(
+            label: 'About Us',
+            url: "https://chemrevolutions.com/about",
+          ),
+          FooterItem(
+            label: 'Privacy Policy',
+            url: "https://chemrevolutions.com/privacy",
+          ),
+          FooterItem(
+            label: 'Data Collection',
+            url: "https://chemrevolutions.com/data",
+          ),
+        ],
+      ),
+      FooterColumn(
+        title: 'POLICIES',
+        items: [
+          FooterItem(
+            label: 'Privacy Policy',
+            url: "https://chemrevolutions.com/privacy",
+          ),
+          FooterItem(
+            label: 'Data Collection',
+            url: "https://chemrevolutions.com/data",
+          ),
+          FooterItem(
+            label: 'Terms & Conditions',
+            url: "https://chemrevolutions.com/terms",
+          ),
+        ],
+      ),
     ];
 
     return AppScaffold(
@@ -952,20 +1057,23 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
                                             borderSide: const BorderSide(
                                               color: _black,
                                             ),
-                                            borderRadius:
-                                                BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                           focusedBorder: OutlineInputBorder(
-                                            borderSide:
-                                                const BorderSide(color: _gold),
-                                            borderRadius:
-                                                BorderRadius.circular(6),
+                                            borderSide: const BorderSide(
+                                              color: _gold,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                           contentPadding:
                                               const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 14,
-                                          ),
+                                                horizontal: 12,
+                                                vertical: 14,
+                                              ),
                                         ),
                                       ),
                                     ),
@@ -997,7 +1105,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
                                         ),
                                         decoration: BoxDecoration(
                                           border: Border.all(color: _black),
-                                          borderRadius: BorderRadius.circular(6),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
                                         ),
                                         child: Text(
                                           "•••••••",
@@ -1041,18 +1151,24 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
                       // Footer — styled the same as homepage
                       Theme(
                         data: ThemeData.dark().copyWith(
-                          textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Montserrat'),
+                          textTheme: ThemeData.dark().textTheme.apply(
+                            fontFamily: 'Montserrat',
+                          ),
                         ),
                         child: ColoredBox(
                           color: const Color.fromARGB(255, 8, 8, 8),
                           child: Footer(
                             logo: FooterLogo(
-                              image: Image.asset('assets/icons/chemo.png', fit: BoxFit.contain),
+                              image: Image.asset(
+                                'assets/icons/chemo.png',
+                                fit: BoxFit.contain,
+                              ),
                               onTapUrl: "https://chemrevolutions.com",
                             ),
                             socialLinks: social,
                             columns: columns,
-                            copyright: "© 2025 ChemRevolutions.com. All rights reserved.",
+                            copyright:
+                                "© 2025 ChemRevolutions.com. All rights reserved.",
                           ),
                         ),
                       ),
@@ -1060,7 +1176,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage>
                   ),
                 ),
         ),
-      )
+      ),
     );
   }
 }
