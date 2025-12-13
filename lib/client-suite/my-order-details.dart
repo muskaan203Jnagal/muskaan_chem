@@ -26,7 +26,10 @@ class OrderDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     // FOOTER DATA (same as all profile pages)
     final social = [
-      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
+      SocialLink(
+        icon: FontAwesomeIcons.instagram,
+        url: 'https://instagram.com',
+      ),
       SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
       SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
     ];
@@ -37,101 +40,145 @@ class OrderDetailsPage extends StatelessWidget {
     void contactPage() {}
 
     final columns = [
-      FooterColumn(title: 'QUICK LINKS', items: [
-        FooterItem(label: 'Home', onTap: homePage),
-        FooterItem(label: 'Categories', onTap: categoriesPage),
-        FooterItem(label: 'Product Detail', onTap: productDetailPage),
-        FooterItem(label: 'Contact Us', onTap: contactPage),
-      ]),
-      FooterColumn(title: 'CUSTOMER SERVICE', items: [
-        FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
-        FooterItem(label: 'Order Status', url: "https://chemrevolutions.com/orders"),
-        FooterItem(label: 'Wishlist', url: "https://chemrevolutions.com/wishlist"),
-      ]),
-      FooterColumn(title: 'INFORMATION', items: [
-        FooterItem(label: 'About Us', url: "https://chemrevolutions.com/about"),
-        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-      ]),
-      FooterColumn(title: 'POLICIES', items: [
-        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-        FooterItem(label: 'Terms & Conditions', url: "https://chemrevolutions.com/terms"),
-      ]),
+      FooterColumn(
+        title: 'QUICK LINKS',
+        items: [
+          FooterItem(label: 'Home', onTap: homePage),
+          FooterItem(label: 'Categories', onTap: categoriesPage),
+          FooterItem(label: 'Product Detail', onTap: productDetailPage),
+          FooterItem(label: 'Contact Us', onTap: contactPage),
+        ],
+      ),
+      FooterColumn(
+        title: 'CUSTOMER SERVICE',
+        items: [
+          FooterItem(
+            label: 'My Account',
+            url: "https://chemrevolutions.com/account",
+          ),
+          FooterItem(
+            label: 'Order Status',
+            url: "https://chemrevolutions.com/orders",
+          ),
+          FooterItem(
+            label: 'Wishlist',
+            url: "https://chemrevolutions.com/wishlist",
+          ),
+        ],
+      ),
+      FooterColumn(
+        title: 'INFORMATION',
+        items: [
+          FooterItem(
+            label: 'About Us',
+            url: "https://chemrevolutions.com/about",
+          ),
+          FooterItem(
+            label: 'Privacy Policy',
+            url: "https://chemrevolutions.com/privacy",
+          ),
+          FooterItem(
+            label: 'Data Collection',
+            url: "https://chemrevolutions.com/data",
+          ),
+        ],
+      ),
+      FooterColumn(
+        title: 'POLICIES',
+        items: [
+          FooterItem(
+            label: 'Privacy Policy',
+            url: "https://chemrevolutions.com/privacy",
+          ),
+          FooterItem(
+            label: 'Data Collection',
+            url: "https://chemrevolutions.com/data",
+          ),
+          FooterItem(
+            label: 'Terms & Conditions',
+            url: "https://chemrevolutions.com/terms",
+          ),
+        ],
+      ),
     ];
 
     return AppScaffold(
       currentPage: "PROFILE",
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // TOP BANNER
-            const TopBannerTabs(active: AccountTab.orders),
+      body: Container(
+        color: Colors.white,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // TOP BANNER
+              const TopBannerTabs(active: AccountTab.orders),
 
-            // MAIN CONTENT
-            FutureBuilder<DocumentSnapshot>(
-              future: FirebaseFirestore.instance
-                  .collection("orders")
-                  .doc(orderId)
-                  .get(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.only(top: 80),
-                    child: Center(child: CircularProgressIndicator()),
+              // MAIN CONTENT
+              FutureBuilder<DocumentSnapshot>(
+                future: FirebaseFirestore.instance
+                    .collection("orders")
+                    .doc(orderId)
+                    .get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 80),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+
+                  if (!snapshot.hasData || !snapshot.data!.exists) {
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 80),
+                      child: Center(child: Text("Order not found")),
+                    );
+                  }
+
+                  final data = snapshot.data!.data() as Map<String, dynamic>;
+
+                  final placedDate = data["orderDate"]?.toDate();
+                  final items = List.from(data["items"] ?? []);
+                  final address = data["shippingAddress"] ?? {};
+                  final status = data["status"] ?? "Processing";
+                  final totalAmount = data["totalAmount"] ?? 0;
+                  final paymentMode = data["paymentMode"] ?? "Manual";
+
+                  return _buildContent(
+                    context,
+                    placedDate,
+                    items,
+                    address,
+                    status,
+                    totalAmount,
+                    paymentMode,
                   );
-                }
-
-                if (!snapshot.hasData || !snapshot.data!.exists) {
-                  return const Padding(
-                    padding: EdgeInsets.only(top: 80),
-                    child: Center(child: Text("Order not found")),
-                  );
-                }
-
-                final data = snapshot.data!.data() as Map<String, dynamic>;
-
-                final placedDate = data["orderDate"]?.toDate();
-                final items = List.from(data["items"] ?? []);
-                final address = data["shippingAddress"] ?? {};
-                final status = data["status"] ?? "Processing";
-                final totalAmount = data["totalAmount"] ?? 0;
-                final paymentMode = data["paymentMode"] ?? "Manual";
-
-                return _buildContent(
-                  context,
-                  placedDate,
-                  items,
-                  address,
-                  status,
-                  totalAmount,
-                  paymentMode,
-                );
-              },
-            ),
-
-            const SizedBox(height: 60),
-
-            // FOOTER (same as profile pages)
-            Theme(
-              data: ThemeData.dark().copyWith(
-                textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Montserrat'),
+                },
               ),
-              child: ColoredBox(
-                color: const Color.fromARGB(255, 8, 8, 8),
-                child: Footer(
-                  logo: FooterLogo(
-                    image: Image.asset('assets/icons/chemo.png'),
-                    onTapUrl: "https://chemrevolutions.com",
+
+              const SizedBox(height: 60),
+
+              // FOOTER (same as profile pages)
+              Theme(
+                data: ThemeData.dark().copyWith(
+                  textTheme: ThemeData.dark().textTheme.apply(
+                    fontFamily: 'Montserrat',
                   ),
-                  socialLinks: social,
-                  columns: columns,
-                  copyright:
-                      "© 2025 ChemRevolutions.com. All rights reserved.",
+                ),
+                child: ColoredBox(
+                  color: const Color.fromARGB(255, 8, 8, 8),
+                  child: Footer(
+                    logo: FooterLogo(
+                      image: Image.asset('assets/icons/chemo.png'),
+                      onTapUrl: "https://chemrevolutions.com",
+                    ),
+                    socialLinks: social,
+                    columns: columns,
+                    copyright:
+                        "© 2025 ChemRevolutions.com. All rights reserved.",
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -232,7 +279,7 @@ class OrderDetailsPage extends StatelessWidget {
                                 Text(
                                   "Qty: ${item["quantity"]}",
                                   style: GoogleFonts.montserrat(fontSize: 14),
-                                )
+                                ),
                               ],
                             ),
                           ],
@@ -281,7 +328,10 @@ class OrderDetailsPage extends StatelessWidget {
                   children: [
                     _sectionTitle("Payment Method"),
                     const SizedBox(height: 10),
-                    Text(paymentMode, style: GoogleFonts.montserrat(fontSize: 16)),
+                    Text(
+                      paymentMode,
+                      style: GoogleFonts.montserrat(fontSize: 16),
+                    ),
                   ],
                 ),
               ),
@@ -310,8 +360,10 @@ class OrderDetailsPage extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _black,
                         foregroundColor: _white,
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 14,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -324,7 +376,7 @@ class OrderDetailsPage extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -352,7 +404,7 @@ class OrderDetailsPage extends StatelessWidget {
       "Sep",
       "Oct",
       "Nov",
-      "Dec"
+      "Dec",
     ];
     return list[m - 1];
   }
@@ -363,10 +415,7 @@ class OrderDetailsPage extends StatelessWidget {
 Widget _sectionTitle(String title) {
   return Text(
     title,
-    style: GoogleFonts.montserrat(
-      fontSize: 20,
-      fontWeight: FontWeight.w700,
-    ),
+    style: GoogleFonts.montserrat(fontSize: 20, fontWeight: FontWeight.w700),
   );
 }
 
@@ -405,11 +454,7 @@ Widget _timeline(String title, String date, bool active) {
                 shape: BoxShape.circle,
               ),
             ),
-            Container(
-              width: 2,
-              height: 40,
-              color: Colors.grey.shade300,
-            )
+            Container(width: 2, height: 40, color: Colors.grey.shade300),
           ],
         ),
         const SizedBox(width: 20),
@@ -431,7 +476,7 @@ Widget _timeline(String title, String date, bool active) {
               ),
             ),
           ],
-        )
+        ),
       ],
     ),
   );

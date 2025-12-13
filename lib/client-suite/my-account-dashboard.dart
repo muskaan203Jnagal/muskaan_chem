@@ -39,210 +39,223 @@ class MyAccountDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppScaffold(
       currentPage: 'PROFILE',
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final double width = constraints.maxWidth;
-                final bool isTwoColumn = width >= 760;
+      body: Container(
+        color: Colors.white,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 40),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final double width = constraints.maxWidth;
+                  final bool isTwoColumn = width >= 760;
 
-                return Center(
-                  child: ConstrainedBox(
-                    constraints:
-                        const BoxConstraints(maxWidth: _maxContentWidth),
-                    child: FutureBuilder<Map<String, dynamic>>(
-                      future: _getUserData(),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
-                          return const Center(
-                            child: CircularProgressIndicator(color: Colors.black),
-                          );
-                        }
-
-                        final data = snapshot.data!;
-                        final name = data["name"] ?? "User";
-                        final email = data["email"] ?? "No Email";
-                        final firstLetter = name.isNotEmpty
-                            ? name.trim()[0].toUpperCase()
-                            : "U";
-
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // ---------------- PROFILE CARD ----------------
-                            Container(
-                              margin: const EdgeInsets.only(bottom: 40),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 18,
+                  return Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: _maxContentWidth,
+                      ),
+                      child: FutureBuilder<Map<String, dynamic>>(
+                        future: _getUserData(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.black,
                               ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(_radius),
-                                border: Border(
-                                  left: BorderSide(color: _gold, width: 4),
+                            );
+                          }
+
+                          final data = snapshot.data!;
+                          final name = data["name"] ?? "User";
+                          final email = data["email"] ?? "No Email";
+                          final firstLetter = name.isNotEmpty
+                              ? name.trim()[0].toUpperCase()
+                              : "U";
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // ---------------- PROFILE CARD ----------------
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 40),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 18,
                                 ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.18),
-                                    blurRadius: 45,
-                                    offset: const Offset(0, 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(_radius),
+                                  border: Border(
+                                    left: BorderSide(color: _gold, width: 4),
                                   ),
-                                ],
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: _avatarSize,
-                                    height: _avatarSize,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.black,
-                                      border:
-                                          Border.all(color: _gold, width: 2),
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        firstLetter,
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 28,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 20),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        name,
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.w600,
-                                          color: const Color(0xFF111111),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        email,
-                                        style: GoogleFonts.montserrat(
-                                          fontSize: 14,
-                                          color: Colors.black.withOpacity(0.8),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            // ---------------- DASHBOARD CARDS --------------
-                            LayoutBuilder(
-                              builder: (context, inner) {
-                                const double gap = 25;
-                                final double cardWidth = isTwoColumn
-                                    ? (inner.maxWidth - gap) / 2
-                                    : inner.maxWidth;
-
-                                return Wrap(
-                                  spacing: gap,
-                                  runSpacing: gap,
-                                  children: [
-                                    _buildCard(
-                                      context,
-                                      width: cardWidth,
-                                      title: "My Orders",
-                                      subtitle: "View your past orders & details",
-                                      page: const MyOrdersPage(),
-                                    ),
-                                    _buildCard(
-                                      context,
-                                      width: cardWidth,
-                                      title: "My Addresses",
-                                      subtitle:
-                                          "Manage saved delivery addresses",
-                                      page: const MyAddressesPage(),
-                                    ),
-                                    _buildCard(
-                                      context,
-                                      width: cardWidth,
-                                      title: "My Wishlist",
-                                      subtitle:
-                                          "Your saved favourite products",
-                                      page: const MyWishlistPage(),
-                                    ),
-                                    _buildCard(
-                                      context,
-                                      width: cardWidth,
-                                      title: "Account Settings",
-                                      subtitle:
-                                          "Edit your personal details & password",
-                                      page: const AccountSettingsPage(),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.18),
+                                      blurRadius: 45,
+                                      offset: const Offset(0, 8),
                                     ),
                                   ],
-                                );
-                              },
-                            ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: _avatarSize,
+                                      height: _avatarSize,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.black,
+                                        border: Border.all(
+                                          color: _gold,
+                                          width: 2,
+                                        ),
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          firstLetter,
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 20),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF111111),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          email,
+                                          style: GoogleFonts.montserrat(
+                                            fontSize: 14,
+                                            color: Colors.black.withOpacity(
+                                              0.8,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
 
-                            const SizedBox(height: 40),
+                              // ---------------- DASHBOARD CARDS --------------
+                              LayoutBuilder(
+                                builder: (context, inner) {
+                                  const double gap = 25;
+                                  final double cardWidth = isTwoColumn
+                                      ? (inner.maxWidth - gap) / 2
+                                      : inner.maxWidth;
 
-                            // ---------------- SIGN OUT ---------------------
-                            Align(
-                              alignment: Alignment.center,
-                              child: GestureDetector(
-                                onTap: () async {
-                                  await FirebaseAuth.instance.signOut();
-                                  if (!context.mounted) return;
-                                  Navigator.pushReplacementNamed(context, '/');
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 32,
-                                    vertical: 14,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: _gold),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color:
-                                            Colors.black.withOpacity(0.25),
-                                        blurRadius: 40,
-                                        offset: const Offset(0, 8),
+                                  return Wrap(
+                                    spacing: gap,
+                                    runSpacing: gap,
+                                    children: [
+                                      _buildCard(
+                                        context,
+                                        width: cardWidth,
+                                        title: "My Orders",
+                                        subtitle:
+                                            "View your past orders & details",
+                                        page: const MyOrdersPage(),
+                                      ),
+                                      _buildCard(
+                                        context,
+                                        width: cardWidth,
+                                        title: "My Addresses",
+                                        subtitle:
+                                            "Manage saved delivery addresses",
+                                        page: const MyAddressesPage(),
+                                      ),
+                                      _buildCard(
+                                        context,
+                                        width: cardWidth,
+                                        title: "My Wishlist",
+                                        subtitle:
+                                            "Your saved favourite products",
+                                        page: const MyWishlistPage(),
+                                      ),
+                                      _buildCard(
+                                        context,
+                                        width: cardWidth,
+                                        title: "Account Settings",
+                                        subtitle:
+                                            "Edit your personal details & password",
+                                        page: const AccountSettingsPage(),
                                       ),
                                     ],
-                                  ),
-                                  child: Text(
-                                    "Sign out",
-                                    style: GoogleFonts.montserrat(
-                                      color: Colors.white,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
+                                  );
+                                },
+                              ),
+
+                              const SizedBox(height: 40),
+
+                              // ---------------- SIGN OUT ---------------------
+                              Align(
+                                alignment: Alignment.center,
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    await FirebaseAuth.instance.signOut();
+                                    if (!context.mounted) return;
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      '/',
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 32,
+                                      vertical: 14,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: _gold),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.25),
+                                          blurRadius: 40,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      "Sign out",
+                                      style: GoogleFonts.montserrat(
+                                        color: Colors.white,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
 
-                            const SizedBox(height: 50),
-                          ],
-                        );
-                      },
+                              const SizedBox(height: 50),
+                            ],
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
 
-            // ------------------- FOOTER (CORRECT WAY) -------------------
-            _buildDashboardFooter(),
-          ],
+              // ------------------- FOOTER (CORRECT WAY) -------------------
+              _buildDashboardFooter(),
+            ],
+          ),
         ),
       ),
     );
@@ -250,33 +263,48 @@ class MyAccountDashboard extends StatelessWidget {
 
   Widget _buildDashboardFooter() {
     final social = [
-      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
+      SocialLink(
+        icon: FontAwesomeIcons.instagram,
+        url: 'https://instagram.com',
+      ),
       SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
       SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
     ];
 
     final columns = [
-      FooterColumn(title: 'QUICK LINKS', items: [
-        FooterItem(label: 'Home', url: "/"),
-        FooterItem(label: 'Categories'),
-        FooterItem(label: 'Product Detail'),
-        FooterItem(label: 'Contact Us'),
-      ]),
-      FooterColumn(title: 'CUSTOMER SERVICE', items: [
-        FooterItem(label: 'My Account'),
-        FooterItem(label: 'Order Status'),
-        FooterItem(label: 'Wishlist'),
-      ]),
-      FooterColumn(title: 'INFORMATION', items: [
-        FooterItem(label: 'About Us'),
-        FooterItem(label: 'Privacy Policy'),
-        FooterItem(label: 'Data Collection'),
-      ]),
-      FooterColumn(title: 'POLICIES', items: [
-        FooterItem(label: 'Privacy Policy'),
-        FooterItem(label: 'Data Collection'),
-        FooterItem(label: 'Terms & Conditions'),
-      ]),
+      FooterColumn(
+        title: 'QUICK LINKS',
+        items: [
+          FooterItem(label: 'Home', url: "/"),
+          FooterItem(label: 'Categories'),
+          FooterItem(label: 'Product Detail'),
+          FooterItem(label: 'Contact Us'),
+        ],
+      ),
+      FooterColumn(
+        title: 'CUSTOMER SERVICE',
+        items: [
+          FooterItem(label: 'My Account'),
+          FooterItem(label: 'Order Status'),
+          FooterItem(label: 'Wishlist'),
+        ],
+      ),
+      FooterColumn(
+        title: 'INFORMATION',
+        items: [
+          FooterItem(label: 'About Us'),
+          FooterItem(label: 'Privacy Policy'),
+          FooterItem(label: 'Data Collection'),
+        ],
+      ),
+      FooterColumn(
+        title: 'POLICIES',
+        items: [
+          FooterItem(label: 'Privacy Policy'),
+          FooterItem(label: 'Data Collection'),
+          FooterItem(label: 'Terms & Conditions'),
+        ],
+      ),
     ];
 
     return ColoredBox(
@@ -288,8 +316,7 @@ class MyAccountDashboard extends StatelessWidget {
         ),
         socialLinks: social,
         columns: columns,
-        copyright:
-            "© 2025 ChemRevolutions.com. All rights reserved.",
+        copyright: "© 2025 ChemRevolutions.com. All rights reserved.",
       ),
     );
   }
