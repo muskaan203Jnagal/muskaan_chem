@@ -222,14 +222,19 @@ class HomePage extends StatelessWidget {
     void homePage() { print("Go to Home Page"); }
     void categoriesPage() { print("Go to Categories Page"); }
     void productDetailPage() { print("Go to Product Detail Page"); }
-    void contactPage() { print("Go to Contact Page"); }
 
     final columns = [
       FooterColumn(title: 'QUICK LINKS', items: [
         FooterItem(label: 'Home', onTap: homePage),
         FooterItem(label: 'Categories', onTap: categoriesPage),
         FooterItem(label: 'Product Detail', onTap: productDetailPage),
-        FooterItem(label: 'Contact Us', onTap: contactPage),
+   FooterItem(
+  label: 'Contact Us',
+  onTap: () {
+    Navigator.pushNamed(context, '/contact');
+  },
+),
+
       ]),
       FooterColumn(title: 'CUSTOMER SERVICE', items: [
         FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
@@ -913,18 +918,17 @@ class _ReviewsSectionState extends State<ReviewsSection> {
     super.initState();
     // Start the auto-play timer
     _timer = Timer.periodic(Duration(seconds: _duration), (Timer timer) {
-      if (_pageController.hasClients) {
-        // Calculate the next page index.
-        final nextPage = (_pageController.page!.round() + 1).toInt();
-        
-        // Animate to the next page
-        _pageController.animateToPage(
-          nextPage,
-          duration: const Duration(milliseconds: 600),
-          curve: Curves.easeOut,
-        );
-      }
-    });
+  if (!_pageController.hasClients) return;
+
+  final page = _pageController.page;
+  if (page == null) return;
+
+  _pageController.animateToPage(
+    page.round() + 1,
+    duration: const Duration(milliseconds: 600),
+    curve: Curves.easeOut,
+  );
+});
   }
 
   @override

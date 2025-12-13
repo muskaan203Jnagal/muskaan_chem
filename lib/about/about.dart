@@ -651,25 +651,24 @@ class _AboutPageState extends State<AboutPage>
                                       ),
                                     ),
                                     SizedBox(height: 12),
-                                    OutlinedButton(
-                                      onPressed: () {
-                                        Navigator.pushNamed(
-                                          context,
-                                          "/contact",
-                                        );
-                                      },
-                                      style: OutlinedButton.styleFrom(
-                                        side: BorderSide(color: Colors.white70),
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 22,
-                                          vertical: 12,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        "Contact",
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
+                        OutlinedButton(
+  onPressed: () {
+    Navigator.of(context, rootNavigator: true)
+        .pushNamed('/contact');
+  },
+  style: OutlinedButton.styleFrom(
+    side: BorderSide(color: Colors.white70),
+    padding: EdgeInsets.symmetric(
+      horizontal: 22,
+      vertical: 12,
+    ),
+  ),
+  child: Text(
+    "Contact",
+    style: TextStyle(color: Colors.white),
+  ),
+),
+
                                   ],
                                 );
                               }
@@ -701,22 +700,24 @@ class _AboutPageState extends State<AboutPage>
                                     ),
                                   ),
                                   SizedBox(width: 14),
-                                  OutlinedButton(
-                                    onPressed: () {
-                                      Navigator.pushNamed(context, "/contact");
-                                    },
-                                    style: OutlinedButton.styleFrom(
-                                      side: BorderSide(color: Colors.white70),
-                                      padding: EdgeInsets.symmetric(
-                                        horizontal: 22,
-                                        vertical: 12,
-                                      ),
-                                    ),
-                                    child: Text(
-                                      "Contact",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
+                                OutlinedButton(
+  onPressed: () {
+    Navigator.of(context, rootNavigator: true)
+        .pushNamed('/contact');
+  },
+  style: OutlinedButton.styleFrom(
+    side: BorderSide(color: Colors.white70),
+    padding: EdgeInsets.symmetric(
+      horizontal: 22,
+      vertical: 12,
+    ),
+  ),
+  child: Text(
+    "Contact",
+    style: TextStyle(color: Colors.white),
+  ),
+),
+
                                 ],
                               );
                             },
@@ -764,7 +765,13 @@ class _AboutPageState extends State<AboutPage>
                                 FooterItem(label: 'Home'),
                                 FooterItem(label: 'Categories'),
                                 FooterItem(label: 'Product Detail'),
-                                FooterItem(label: 'Contact Us'),
+                               FooterItem(
+      label: 'Contact Us',
+      onTap: () {
+        Navigator.of(context, rootNavigator: true)
+            .pushReplacementNamed('/contact');
+      },
+    ),
                               ],
                             ),
                             FooterColumn(
