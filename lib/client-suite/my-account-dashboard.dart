@@ -23,7 +23,32 @@ class MyAccountDashboard extends StatelessWidget {
   static const double _avatarSize = 70.0;
   static const double _radius = 16.0;
 
+  Future<void> _syncEmailBeforeDashboardLoad() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await user.reload();
+    final refreshed = FirebaseAuth.instance.currentUser;
+    if (refreshed == null || refreshed.email == null) return;
+
+    final doc = FirebaseFirestore.instance
+        .collection("users")
+        .doc(refreshed.uid);
+
+    final snap = await doc.get();
+    final firestoreEmail = snap.data()?['email'];
+
+    if (firestoreEmail != refreshed.email) {
+      await doc.set({
+        "email": refreshed.email,
+        "updatedAt": FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+  }
+
   Future<Map<String, dynamic>> _getUserData() async {
+    await _syncEmailBeforeDashboardLoad();
+
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return {};
 
@@ -231,7 +256,7 @@ class MyAccountDashboard extends StatelessWidget {
                                       ],
                                     ),
                                     child: Text(
-                                      "Sign out",
+                                      "Logout",
                                       style: GoogleFonts.montserrat(
                                         color: Colors.white,
                                         fontSize: 15,
