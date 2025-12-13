@@ -4,7 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import '/homepage/homepage.dart';
 import 'package:chem_revolutions/about/about.dart';
 import 'package:chem_revolutions/contact/contact.dart';
-
+import 'package:chem_revolutions/getverified/getverified.dart';
 import 'firebase_options.dart';
 
 // Import Cookie Popup Wrapper
@@ -30,7 +30,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp( 
+   
+  
       title: 'E-Commerce Catalog',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -41,12 +43,13 @@ class MyApp extends StatelessWidget {
 
       // 🔥 Cookie Popup FIRST → then HomePage
       home: const CookieApp(),
-     routes: {
-  '/home': (context) => const HomePage(),
-  '/about': (context) => const AboutPage(),
-  '/policy': (context) => const PolicyPageB(),
-  '/contact': (context) => const ContactPage(),
-},
+      routes: {
+        '/home': (context) => const HomePage(),
+        '/about': (context) => const AboutPage(),
+        '/policy': (context) => const PolicyPageB(),
+        '/contact': (context) => const ContactPage(),
+        '/getverified': (context) => const GetVerifiedPage(),
+      },
     );
   }
 }

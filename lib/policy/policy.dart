@@ -144,10 +144,42 @@ class _PolicyPageBState extends State<PolicyPageB> {
                                 FooterColumn(
                                   title: 'QUICK LINKS',
                                   items: [
-                                    FooterItem(label: 'Home'),
-                                    FooterItem(label: 'Categories'),
-                                    FooterItem(label: 'Product Detail'),
-                                    FooterItem(label: 'Contact Us'),
+                                    FooterItem(
+                                      label: 'Home',
+                                      onTap: () {
+                                        Navigator.of(
+                                          context,
+                                          rootNavigator: true,
+                                        ).pushReplacementNamed('/home');
+                                      },
+                                    ),
+                                    FooterItem(
+                                      label: 'Categories',
+                                      onTap: () {
+                                        Navigator.of(
+                                          context,
+                                          rootNavigator: true,
+                                        ).pushReplacementNamed('/home');
+                                      },
+                                    ),
+                                    FooterItem(
+                                      label: 'Product Detail',
+                                      onTap: () {
+                                        Navigator.of(
+                                          context,
+                                          rootNavigator: true,
+                                        ).pushReplacementNamed('/home');
+                                      },
+                                    ),
+                                    FooterItem(
+                                      label: 'Contact Us',
+                                      onTap: () {
+                                        Navigator.of(
+                                          context,
+                                          rootNavigator: true,
+                                        ).pushReplacementNamed('/contact');
+                                      },
+                                    ),
                                   ],
                                 ),
                                 FooterColumn(
@@ -164,25 +196,61 @@ class _PolicyPageBState extends State<PolicyPageB> {
                                     ),
                                     FooterItem(
                                       label: 'Wishlist',
-                                      url:
-                                          "https://chemrevolutions.com/wishlist",
+                                      onTap: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/my-wishlist',
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
                                 FooterColumn(
                                   title: 'INFORMATION',
                                   items: [
-                                    FooterItem(label: 'About Us'),
-                                    FooterItem(label: 'Privacy Policy'),
-                                    FooterItem(label: 'Data Collection'),
+                                    FooterItem(
+                                      label: 'About Us',
+                                      onTap: () {
+                                        Navigator.pushNamed(context, '/about');
+                                      },
+                                    ),
+
+                                    FooterItem(
+                                      label: 'Privacy Policy',
+                                      onTap: () {
+                                        Navigator.pushNamed(context, '/policy');
+                                      },
+                                    ),
+
+                                    FooterItem(
+                                      label: 'Data Collection',
+                                      onTap: () {
+                                        Navigator.pushNamed(context, '/policy');
+                                      },
+                                    ),
                                   ],
                                 ),
                                 FooterColumn(
                                   title: 'POLICIES',
                                   items: [
-                                    FooterItem(label: 'Privacy Policy'),
-                                    FooterItem(label: 'Data Collection'),
-                                    FooterItem(label: 'Terms & Conditions'),
+                                    FooterItem(
+                                      label: 'policy',
+                                      onTap: () {
+                                        Navigator.pushNamed(context, '/policy');
+                                      },
+                                    ),
+                                    FooterItem(
+                                      label: 'Data Collection',
+                                      onTap: () {
+                                        Navigator.pushNamed(context, '/policy');
+                                      },
+                                    ),
+                                    FooterItem(
+                                      label: 'Terms and Conditions',
+                                      onTap: () {
+                                        Navigator.pushNamed(context, '/policy');
+                                      },
+                                    ),
                                   ],
                                 ),
                               ],
@@ -394,4 +462,5 @@ class _PolicyPageBState extends State<PolicyPageB> {
     );
   }
 }
+
 //12-12-25

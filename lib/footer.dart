@@ -6,7 +6,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-
 // MODELS ---------------------------------------------
 
 class FooterItem {
@@ -359,4 +358,3 @@ Future<void> _openUrl(String url) async {
   if (!await canLaunchUrl(uri)) return;
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
-

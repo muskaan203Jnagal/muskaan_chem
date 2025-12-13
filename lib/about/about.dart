@@ -420,7 +420,9 @@ class _AboutPageState extends State<AboutPage>
                           const SizedBox(height: 22),
 
                           ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.pushNamed(context, "/product");
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black,
                               elevation: 6,
@@ -622,7 +624,12 @@ class _AboutPageState extends State<AboutPage>
                                 return Column(
                                   children: [
                                     TextButton(
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          "/product",
+                                        );
+                                      },
                                       style: TextButton.styleFrom(
                                         backgroundColor: Colors.black,
                                         padding: EdgeInsets.symmetric(
@@ -644,24 +651,25 @@ class _AboutPageState extends State<AboutPage>
                                       ),
                                     ),
                                     SizedBox(height: 12),
-                        OutlinedButton(
-  onPressed: () {
-    Navigator.of(context, rootNavigator: true)
-        .pushNamed('/contact');
-  },
-  style: OutlinedButton.styleFrom(
-    side: BorderSide(color: Colors.white70),
-    padding: EdgeInsets.symmetric(
-      horizontal: 22,
-      vertical: 12,
-    ),
-  ),
-  child: Text(
-    "Contact",
-    style: TextStyle(color: Colors.white),
-  ),
-),
-
+                                    OutlinedButton(
+                                      onPressed: () {
+                                        Navigator.of(
+                                          context,
+                                          rootNavigator: true,
+                                        ).pushNamed('/contact');
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        side: BorderSide(color: Colors.white70),
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 22,
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        "Contact",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
                                   ],
                                 );
                               }
@@ -671,7 +679,9 @@ class _AboutPageState extends State<AboutPage>
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   TextButton(
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, "/product");
+                                    },
                                     style: TextButton.styleFrom(
                                       backgroundColor: Colors.black,
                                       padding: EdgeInsets.symmetric(
@@ -691,24 +701,25 @@ class _AboutPageState extends State<AboutPage>
                                     ),
                                   ),
                                   SizedBox(width: 14),
-                                OutlinedButton(
-  onPressed: () {
-    Navigator.of(context, rootNavigator: true)
-        .pushNamed('/contact');
-  },
-  style: OutlinedButton.styleFrom(
-    side: BorderSide(color: Colors.white70),
-    padding: EdgeInsets.symmetric(
-      horizontal: 22,
-      vertical: 12,
-    ),
-  ),
-  child: Text(
-    "Contact",
-    style: TextStyle(color: Colors.white),
-  ),
-),
-
+                                  OutlinedButton(
+                                    onPressed: () {
+                                      Navigator.of(
+                                        context,
+                                        rootNavigator: true,
+                                      ).pushNamed('/contact');
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      side: BorderSide(color: Colors.white70),
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 22,
+                                        vertical: 12,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      "Contact",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
                                 ],
                               );
                             },
@@ -753,16 +764,42 @@ class _AboutPageState extends State<AboutPage>
                             FooterColumn(
                               title: 'QUICK LINKS',
                               items: [
-                                FooterItem(label: 'Home'),
-                                FooterItem(label: 'Categories'),
-                                FooterItem(label: 'Product Detail'),
-                               FooterItem(
-      label: 'Contact Us',
-      onTap: () {
-        Navigator.of(context, rootNavigator: true)
-            .pushReplacementNamed('/contact');
-      },
-    ),
+                                FooterItem(
+                                  label: 'Home',
+                                  onTap: () {
+                                    Navigator.of(
+                                      context,
+                                      rootNavigator: true,
+                                    ).pushReplacementNamed('/home');
+                                  },
+                                ),
+                                FooterItem(
+                                  label: 'Categories',
+                                  onTap: () {
+                                    Navigator.of(
+                                      context,
+                                      rootNavigator: true,
+                                    ).pushReplacementNamed('/home');
+                                  },
+                                ),
+                                FooterItem(
+                                  label: 'Product Detail',
+                                  onTap: () {
+                                    Navigator.of(
+                                      context,
+                                      rootNavigator: true,
+                                    ).pushReplacementNamed('/home');
+                                  },
+                                ),
+                                FooterItem(
+                                  label: 'Contact Us',
+                                  onTap: () {
+                                    Navigator.of(
+                                      context,
+                                      rootNavigator: true,
+                                    ).pushReplacementNamed('/contact');
+                                  },
+                                ),
                               ],
                             ),
                             FooterColumn(
@@ -778,24 +815,58 @@ class _AboutPageState extends State<AboutPage>
                                 ),
                                 FooterItem(
                                   label: 'Wishlist',
-                                  url: "https://chemrevolutions.com/wishlist",
+                                   onTap: () {
+                                    Navigator.pushNamed(context, '/my-wishlist');
+                                  },
                                 ),
                               ],
                             ),
                             FooterColumn(
                               title: 'INFORMATION',
                               items: [
-                                FooterItem(label: 'About Us'),
-                                FooterItem(label: 'Privacy Policy'),
-                                FooterItem(label: 'Data Collection'),
+                                FooterItem(
+                                  label: 'About Us',
+                                  onTap: () {
+                                    Navigator.pushNamed(context, '/about');
+                                  },
+                                ),
+
+                                FooterItem(
+                                  label: 'Privacy Policy',
+                                  onTap: () {
+                                    Navigator.pushNamed(context, '/policy');
+                                  },
+                                ),
+
+                                FooterItem(
+                                  label: 'Data Collection',
+                                  onTap: () {
+                                    Navigator.pushNamed(context, '/policy');
+                                  },
+                                ),
                               ],
                             ),
                             FooterColumn(
                               title: 'POLICIES',
                               items: [
-                                FooterItem(label: 'Privacy Policy'),
-                                FooterItem(label: 'Data Collection'),
-                                FooterItem(label: 'Terms & Conditions'),
+                                FooterItem(
+                                  label: 'policy',
+                                  onTap: () {
+                                    Navigator.pushNamed(context, '/policy');
+                                  },
+                                ),
+                                FooterItem(
+                                  label: 'Data Collection',
+                                  onTap: () {
+                                    Navigator.pushNamed(context, '/policy');
+                                  },
+                                ),
+                                FooterItem(
+                                  label: 'Terms and Conditions',
+                                  onTap: () {
+                                    Navigator.pushNamed(context, '/policy');
+                                  },
+                                ),
                               ],
                             ),
                           ],

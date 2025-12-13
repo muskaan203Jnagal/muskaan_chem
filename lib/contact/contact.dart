@@ -6,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 
-
 // Use same header/footer wiring as homepage
 import '/header.dart';
 import '/footer.dart';
@@ -26,61 +25,111 @@ class _ContactPageState extends State<ContactPage> {
     final bool isMobile = MediaQuery.of(context).size.width < 768;
     // social & footer columns (copied pattern from homepage)
     final social = [
-      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
+      SocialLink(
+        icon: FontAwesomeIcons.instagram,
+        url: 'https://instagram.com',
+      ),
       SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
       SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
     ];
 
     final columns = [
-   FooterColumn(
-  title: 'QUICK LINKS',
-  items: [
-    FooterItem(
-      label: 'Home',
-      onTap: () {
-        Navigator.pushNamed(context, '/home');
-      },
-    ),
-    FooterItem(
-      label: 'Categories',
-      onTap: () {
-        Navigator.pushNamed(context, '/home');
-      },
-    ),
-    FooterItem(
-      label: 'Product Detail',
-      onTap: () {
-        Navigator.pushNamed(context, '/home');
-      },
-    ),
-FooterItem(
-  label: 'Contact Us',
-  onTap: () {
-    print('FOOTER → CONTACT CLICKED');
-    Navigator.pushReplacementNamed(context, '/contact');
-  },
-),
+      FooterColumn(
+        title: 'QUICK LINKS',
+        items: [
+          FooterItem(
+            label: 'Home',
+            onTap: () {
+              Navigator.pushNamed(context, '/home');
+            },
+          ),
+          FooterItem(
+            label: 'Categories',
+            onTap: () {
+              Navigator.pushNamed(context, '/home');
+            },
+          ),
+          FooterItem(
+            label: 'Product Detail',
+            onTap: () {
+              Navigator.pushNamed(context, '/home');
+            },
+          ),
+          FooterItem(
+            label: 'Contact Us',
+            onTap: () {
+              print('FOOTER → CONTACT CLICKED');
+              Navigator.pushReplacementNamed(context, '/contact');
+            },
+          ),
+        ],
+      ),
 
-
-  ],
-),
-
-
-      FooterColumn(title: 'CUSTOMER SERVICE', items: [
-        FooterItem(label: 'My Account', url: "https://chemrevolutions.com/account"),
-        FooterItem(label: 'Order Status', url: "https://chemrevolutions.com/orders"),
-        FooterItem(label: 'Wishlist', url: "https://chemrevolutions.com/wishlist"),
-      ]),
-      FooterColumn(title: 'INFORMATION', items: [
-        FooterItem(label: 'About Us', url: "https://chemrevolutions.com/about"),
-        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-      ]),
-      FooterColumn(title: 'POLICIES', items: [
-        FooterItem(label: 'Privacy Policy', url: "https://chemrevolutions.com/privacy"),
-        FooterItem(label: 'Data Collection', url: "https://chemrevolutions.com/data"),
-        FooterItem(label: 'Terms & Conditions', url: "https://chemrevolutions.com/terms"),
-      ]),
+      FooterColumn(
+        title: 'CUSTOMER SERVICE',
+        items: [
+          FooterItem(
+            label: 'My Account',
+            url: "https://chemrevolutions.com/account",
+          ),
+          FooterItem(
+            label: 'Order Status',
+            url: "https://chemrevolutions.com/orders",
+          ),
+          FooterItem(
+            label: 'Wishlist',
+            onTap: () {
+              Navigator.pushNamed(context, '/my-wishlist');
+            },
+          ),
+        ],
+      ),
+      FooterColumn(
+        title: 'INFORMATION',
+        items: [
+          FooterItem(
+            label: 'About Us',
+            onTap: () {
+              Navigator.pushNamed(context, '/about');
+            },
+          ),
+          FooterItem(
+            label: 'Privacy Policy',
+            onTap: () {
+              Navigator.pushNamed(context, '/policy');
+            },
+          ),
+          FooterItem(
+            label: 'Data Collection',
+            onTap: () {
+              Navigator.pushNamed(context, '/policy');
+            },
+          ),
+        ],
+      ),
+      FooterColumn(
+        title: 'POLICIES',
+        items: [
+          FooterItem(
+            label: 'Privacy Policy',
+            onTap: () {
+              Navigator.pushNamed(context, '/policy');
+            },
+          ),
+          FooterItem(
+            label: 'Data Collection',
+            onTap: () {
+              Navigator.pushNamed(context, '/policy');
+            },
+          ),
+          FooterItem(
+            label: 'Terms & Conditions',
+            onTap: () {
+              Navigator.pushNamed(context, '/policy');
+            },
+          ),
+        ],
+      ),
     ];
 
     return AppScaffold(
@@ -117,102 +166,103 @@ FooterItem(
               ),
 
               // Card (1196 x 667)
-Center(
-  child: isMobile
-      // =======================
-      // 📱 MOBILE LAYOUT
-      // =======================
-      ? Column(
-          children: [
-            // 🖤 FULL SCREEN BLACK PANEL
-            SizedBox(
-              height: MediaQuery.of(context).size.height,
-              width: double.infinity,
-              child: const _BlackPanel(
-                width: double.infinity,
-                height: double.infinity,
+              Center(
+                child: isMobile
+                    // =======================
+                    // 📱 MOBILE LAYOUT
+                    // =======================
+                    ? Column(
+                        children: [
+                          // 🖤 FULL SCREEN BLACK PANEL
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height,
+                            width: double.infinity,
+                            child: const _BlackPanel(
+                              width: double.infinity,
+                              height: double.infinity,
+                            ),
+                          ),
+
+                          // 📝 FORM SECTION BELOW
+                          Container(
+                            width: double.infinity,
+                            color: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: const _FormArea(),
+                          ),
+                        ],
+                      )
+                    // =======================
+                    // 🖥 DESKTOP LAYOUT (UNCHANGED)
+                    // =======================
+                    : SizedBox(
+                        width: 1196,
+                        height: 667,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            // White card background
+                            Container(
+                              width: 1196,
+                              height: 667,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.06),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Left black panel
+                            const Positioned(
+                              left: 28,
+                              top: 10,
+                              child: _BlackPanel(width: 491, height: 647),
+                            ),
+
+                            // Right form area
+                            Positioned(
+                              left: 28 + 491 + 24,
+                              top: 18,
+                              child: SizedBox(
+                                width: 1196 - (28 + 491 + 28),
+                                height: 627,
+                                child: const _FormArea(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
               ),
-            ),
-
-            // 📝 FORM SECTION BELOW
-            Container(
-              width: double.infinity,
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              child: const _FormArea(),
-            ),
-          ],
-        )
-
-      // =======================
-      // 🖥 DESKTOP LAYOUT (UNCHANGED)
-      // =======================
-      : SizedBox(
-          width: 1196,
-          height: 667,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // White card background
-              Container(
-                width: 1196,
-                height: 667,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
-                  ],
-                ),
-              ),
-
-              // Left black panel
-              const Positioned(
-                left: 28,
-                top: 10,
-                child: _BlackPanel(
-                  width: 491,
-                  height: 647,
-                ),
-              ),
-
-              // Right form area
-              Positioned(
-                left: 28 + 491 + 24,
-                top: 18,
-                child: SizedBox(
-                  width: 1196 - (28 + 491 + 28),
-                  height: 627,
-                  child: const _FormArea(),
-                ),
-              ),
-            ],
-          ),
-        ),
-),
-
 
               const SizedBox(height: 60),
 
               // FOOTER (same pattern you used on homepage)
               Theme(
                 data: ThemeData.dark().copyWith(
-                  textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Montserrat'),
+                  textTheme: ThemeData.dark().textTheme.apply(
+                    fontFamily: 'Montserrat',
+                  ),
                 ),
                 child: ColoredBox(
                   color: const Color.fromARGB(255, 8, 8, 8),
                   child: Footer(
                     logo: FooterLogo(
-                      image: Image.asset('assets/icons/chemo.png', fit: BoxFit.contain),
+                      image: Image.asset(
+                        'assets/icons/chemo.png',
+                        fit: BoxFit.contain,
+                      ),
                       onTapUrl: "https://chemrevolutions.com",
                     ),
                     socialLinks: social,
                     columns: columns,
-                    copyright: "© 2025 ChemRevolutions.com. All rights reserved.",
+                    copyright:
+                        "© 2025 ChemRevolutions.com. All rights reserved.",
                   ),
                 ),
               ),
@@ -230,11 +280,7 @@ Center(
 class _BlackPanel extends StatefulWidget {
   final double width;
   final double height;
-  const _BlackPanel({
-    super.key,
-    required this.width,
-    required this.height,
-  });
+  const _BlackPanel({super.key, required this.width, required this.height});
 
   @override
   State<_BlackPanel> createState() => _BlackPanelState();
@@ -301,7 +347,9 @@ class _BlackPanelState extends State<_BlackPanel> {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: widget.width * 0.7),
+                        constraints: BoxConstraints(
+                          maxWidth: widget.width * 0.7,
+                        ),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -309,18 +357,36 @@ class _BlackPanelState extends State<_BlackPanel> {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.phone, color: Colors.white, size: 18),
+                                const Icon(
+                                  Icons.phone,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                                 const SizedBox(width: 10),
-                                Text('+1012 3456 789', style: GoogleFonts.montserrat(color: Colors.white)),
+                                Text(
+                                  '+1012 3456 789',
+                                  style: GoogleFonts.montserrat(
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 24),
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.email, color: Colors.white, size: 18),
+                                const Icon(
+                                  Icons.email,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                                 const SizedBox(width: 10),
-                                Text('demo@gmail.com', style: GoogleFonts.montserrat(color: Colors.white)),
+                                Text(
+                                  'demo@gmail.com',
+                                  style: GoogleFonts.montserrat(
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ],
                             ),
                             const SizedBox(height: 24),
@@ -329,13 +395,20 @@ class _BlackPanelState extends State<_BlackPanel> {
                               children: [
                                 const Padding(
                                   padding: EdgeInsets.only(top: 2.0),
-                                  child: Icon(Icons.location_on, color: Colors.white, size: 18),
+                                  child: Icon(
+                                    Icons.location_on,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
                                     '132 Dartmouth Street Boston, Massachusetts 02156 United States',
-                                    style: GoogleFonts.montserrat(color: Colors.white, fontSize: 12),
+                                    style: GoogleFonts.montserrat(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
                                     textAlign: TextAlign.left,
                                   ),
                                 ),
@@ -369,7 +442,9 @@ class _BlackPanelState extends State<_BlackPanel> {
                         }
 
                         final isHover = _hover[index];
-                        final bg = isHover ? Colors.white : const Color(0xFFFFC107);
+                        final bg = isHover
+                            ? Colors.white
+                            : const Color(0xFFFFC107);
                         final iconColor = isHover ? Colors.black : Colors.white;
 
                         return MouseRegion(
@@ -450,14 +525,15 @@ class _FormAreaState extends State<_FormArea> {
   }
 
   bool get _isFormValid {
-  return _first.text.trim().isNotEmpty &&
-      _last.text.trim().isNotEmpty &&
-      _email.text.trim().isNotEmpty &&
-      RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-          .hasMatch(_email.text.trim()) &&
-      _phone.text.trim().length == 10 &&
-      _message.text.trim().isNotEmpty;
-}
+    return _first.text.trim().isNotEmpty &&
+        _last.text.trim().isNotEmpty &&
+        _email.text.trim().isNotEmpty &&
+        RegExp(
+          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+        ).hasMatch(_email.text.trim()) &&
+        _phone.text.trim().length == 10 &&
+        _message.text.trim().isNotEmpty;
+  }
 
   Future<void> _submit() async {
     if (!_isFormValid) return;
@@ -465,9 +541,7 @@ class _FormAreaState extends State<_FormArea> {
     setState(() => _submitting = true);
 
     try {
-      await FirebaseFirestore.instance
-          .collection('contactSubmissions')
-          .add({
+      await FirebaseFirestore.instance.collection('contactSubmissions').add({
         'firstName': _first.text.trim(),
         'lastName': _last.text.trim(),
         'email': _email.text.trim(),
@@ -518,175 +592,167 @@ class _FormAreaState extends State<_FormArea> {
             alignment: Alignment.center,
             children: [
               // ✅ BLUR BACKGROUND WHEN MODAL SHOWS
-      
-          
-
-         Form(
-  key: _formKey,
-  autovalidateMode: AutovalidateMode.onUserInteraction,
- child: ScrollConfiguration(
-  behavior: const _NoScrollbar(),
-  child: SingleChildScrollView(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-
-
-
-                    Row(
+              Form(
+                key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                child: ScrollConfiguration(
+                  behavior: const _NoScrollbar(),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: _field(
-                            controller: _first,
-                            label: 'First Name',
-                            validator: (v) =>
-                                v == null || v.trim().isEmpty
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _field(
+                                controller: _first,
+                                label: 'First Name',
+                                validator: (v) => v == null || v.trim().isEmpty
                                     ? 'First name is required'
                                     : null,
-                          ),
-                        ),
-                        const SizedBox(width: 18),
-                        Expanded(
-                          child: _field(
-                            controller: _last,
-                            label: 'Last Name',
-                            validator: (v) =>
-                                v == null || v.trim().isEmpty
+                              ),
+                            ),
+                            const SizedBox(width: 18),
+                            Expanded(
+                              child: _field(
+                                controller: _last,
+                                label: 'Last Name',
+                                validator: (v) => v == null || v.trim().isEmpty
                                     ? 'Last name is required'
                                     : null,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 12),
+                        _field(
+                          controller: _email,
+                          label: 'Email',
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Enter email';
+                            }
+                            if (!RegExp(
+                              r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                            ).hasMatch(v.trim())) {
+                              return 'Enter valid email';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+                        _field(
+                          controller: _phone,
+                          label: 'Phone Number',
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10),
+                          ],
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) {
+                              return 'Phone number is required';
+                            }
+                            if (v.trim().length != 10) {
+                              return 'Enter a valid 10-digit phone number';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 18),
+                        Text(
+                          'Select Subject?',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-                    _field(
-                      controller: _email,
-                      label: 'Email',
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Enter email';
-                        }
-                        if (!RegExp(
-                                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-                            .hasMatch(v.trim())) {
-                          return 'Enter valid email';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 12),
-                    _field(
-                      controller: _phone,
-                      label: 'Phone Number',
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(10),
-                      ],
-                      validator: (v) {
-                        if (v == null || v.trim().isEmpty) {
-                          return 'Phone number is required';
-                        }
-                        if (v.trim().length != 10) {
-                          return 'Enter a valid 10-digit phone number';
-                        }
-                        return null;
-                      },
-                    ),
-
-                    const SizedBox(height: 18),
-                    Text(
-                      'Select Subject?',
-                      style: GoogleFonts.montserrat(
-                          fontSize: 13, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 6,
-                      children: [
-                        _radioTile('General Inquiry'),
-                        _radioTile('Suggestions'),
-                        _radioTile('Product'),
-                        _radioTile('Other'),
-                      ],
-                    ),
-
-                    const SizedBox(height: 18),
-                    Text(
-                      'Message',
-                      style: GoogleFonts.montserrat(
-                          fontSize: 13, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      height: 160,
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom:
-                              BorderSide(color: Colors.grey.shade300),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 6,
+                          children: [
+                            _radioTile('General Inquiry'),
+                            _radioTile('Suggestions'),
+                            _radioTile('Product'),
+                            _radioTile('Other'),
+                          ],
                         ),
-                      ),
-                      child: TextFormField(
-                        controller: _message,
-                        maxLines: 6,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) => _submit(),
-                        validator: (v) =>
-                            v == null || v.trim().isEmpty
-                                ? 'Please enter a message'
-                                : null,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
+
+                        const SizedBox(height: 18),
+                        Text(
+                          'Message',
+                          style: GoogleFonts.montserrat(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                    ),
-
-                   const SizedBox(height: 24),
-
-
-                    Center(
-                      child: SizedBox(
-                        width: 260,
-                        child: ElevatedButton(
-                          onPressed: (!_submitting && _isFormValid)
-                              ? _submit
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(12),
+                        const SizedBox(height: 6),
+                        Container(
+                          height: 160,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(color: Colors.grey.shade300),
                             ),
                           ),
-                          child: _submitting
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child:
-                                      CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white),
-                                )
-                              : const Text(
-                                  'Send Message',
-                                  style:
-                                      TextStyle(color: Colors.white),
-                                ),
+                          child: TextFormField(
+                            controller: _message,
+                            maxLines: 6,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => _submit(),
+                            validator: (v) => v == null || v.trim().isEmpty
+                                ? 'Please enter a message'
+                                : null,
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                            ),
+                          ),
                         ),
-                      ),
+
+                        const SizedBox(height: 24),
+
+                        Center(
+                          child: SizedBox(
+                            width: 260,
+                            child: ElevatedButton(
+                              onPressed: (!_submitting && _isFormValid)
+                                  ? _submit
+                                  : null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: _submitting
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Send Message',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-        ],
-      ),
-    ),
-  ),
-),
+                  ),
+                ),
+              ),
 
               // ✅ SUCCESS MODAL
               _SuccessModal(show: _showSuccess),
@@ -709,8 +775,7 @@ class _FormAreaState extends State<_FormArea> {
             activeColor: Colors.black,
             onChanged: (v) => setState(() => _subject = v),
           ),
-          Text(label,
-              style: GoogleFonts.montserrat(fontSize: 12)),
+          Text(label, style: GoogleFonts.montserrat(fontSize: 12)),
         ],
       ),
     );
@@ -726,9 +791,10 @@ class _FormAreaState extends State<_FormArea> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: GoogleFonts.montserrat(
-                fontSize: 12, color: Colors.black54)),
+        Text(
+          label,
+          style: GoogleFonts.montserrat(fontSize: 12, color: Colors.black54),
+        ),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
@@ -736,15 +802,14 @@ class _FormAreaState extends State<_FormArea> {
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
           cursorColor: Colors.black,
-           onChanged: (_) => setState(() {}),
+          onChanged: (_) => setState(() {}),
 
           decoration: const InputDecoration(
             enabledBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: Colors.black),
             ),
             focusedBorder: UnderlineInputBorder(
-              borderSide:
-                  BorderSide(color: Colors.black, width: 1.6),
+              borderSide: BorderSide(color: Colors.black, width: 1.6),
             ),
           ),
         ),
@@ -772,14 +837,11 @@ class _SuccessModal extends StatelessWidget {
           curve: Curves.easeOutExpo,
           child: Container(
             width: 380,
-            padding: const EdgeInsets.symmetric(
-                horizontal: 26, vertical: 24),
+            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 24),
             decoration: BoxDecoration(
               color: Colors.black,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFFF5A800),
-              ),
+              border: Border.all(color: const Color(0xFFF5A800)),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.45),
@@ -824,6 +886,7 @@ class _SuccessModal extends StatelessWidget {
     );
   }
 }
+
 class _NoScrollbar extends ScrollBehavior {
   const _NoScrollbar();
 
