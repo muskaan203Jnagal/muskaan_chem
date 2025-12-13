@@ -29,7 +29,10 @@ class MyWishlistPage extends StatelessWidget {
 
     // Footer data (same as Account Settings)
     final social = [
-      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
+      SocialLink(
+        icon: FontAwesomeIcons.instagram,
+        url: 'https://instagram.com',
+      ),
       SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
       SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
     ];
@@ -70,78 +73,89 @@ class MyWishlistPage extends StatelessWidget {
 
     return AppScaffold(
       currentPage: "PROFILE",
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // TOP PROFILE TABS
-            TopBannerTabs(active: AccountTab.wishlist),
+      body: Container(
+        color: Colors.white,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // TOP PROFILE TABS
+              TopBannerTabs(active: AccountTab.wishlist),
 
-            // ---------------- REAL WISHLIST DATA ----------------
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection("users")
-                  .doc(user!.uid)
-                  .collection("wishlist")
-                  .snapshots(),
-              builder: (context, wishlistSnap) {
-                if (wishlistSnap.connectionState == ConnectionState.waiting) {
-                  return const Padding(
-                    padding: EdgeInsets.only(top: 80),
-                    child: Center(child: CircularProgressIndicator()),
+              // ---------------- REAL WISHLIST DATA ----------------
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection("users")
+                    .doc(user!.uid)
+                    .collection("wishlist")
+                    .snapshots(),
+                builder: (context, wishlistSnap) {
+                  if (wishlistSnap.connectionState == ConnectionState.waiting) {
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 80),
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+
+                  if (!wishlistSnap.hasData ||
+                      wishlistSnap.data!.docs.isEmpty) {
+                    return _emptyWishlistUI();
+                  }
+
+                  final productIds = wishlistSnap.data!.docs
+                      .map((d) => d.id)
+                      .toList();
+
+                  return FutureBuilder<QuerySnapshot>(
+                    future: FirebaseFirestore.instance
+                        .collection("products")
+                        .where(FieldPath.documentId, whereIn: productIds)
+                        .get(),
+                    builder: (context, productSnap) {
+                      if (!productSnap.hasData) {
+                        return const Padding(
+                          padding: EdgeInsets.only(top: 80),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+
+                      final products = productSnap.data!.docs
+                          .map((doc) => Product.fromFirestore(doc))
+                          .toList();
+
+                      return _wishlistUI(context, products);
+                    },
                   );
-                }
-
-                if (!wishlistSnap.hasData || wishlistSnap.data!.docs.isEmpty) {
-                  return _emptyWishlistUI();
-                }
-
-                final productIds = wishlistSnap.data!.docs.map((d) => d.id).toList();
-
-                return FutureBuilder<QuerySnapshot>(
-                  future: FirebaseFirestore.instance
-                      .collection("products")
-                      .where(FieldPath.documentId, whereIn: productIds)
-                      .get(),
-                  builder: (context, productSnap) {
-                    if (!productSnap.hasData) {
-                      return const Padding(
-                        padding: EdgeInsets.only(top: 80),
-                        child: Center(child: CircularProgressIndicator()),
-                      );
-                    }
-
-                    final products = productSnap.data!.docs
-                        .map((doc) => Product.fromFirestore(doc))
-                        .toList();
-
-                    return _wishlistUI(context, products);
-                  },
-                );
-              },
-            ),
-
-            const SizedBox(height: 60),
-
-            // ---------------- FOOTER (SAME AS ACCOUNT SETTINGS) ----------------
-            Theme(
-              data: ThemeData.dark().copyWith(
-                textTheme: ThemeData.dark().textTheme.apply(fontFamily: 'Montserrat'),
+                },
               ),
-              child: ColoredBox(
-                color: const Color.fromARGB(255, 8, 8, 8),
-                child: Footer(
-                  logo: FooterLogo(
-                    image: Image.asset('assets/icons/chemo.png', fit: BoxFit.contain),
-                    onTapUrl: "https://chemrevolutions.com",
+
+              const SizedBox(height: 60),
+
+              // ---------------- FOOTER (SAME AS ACCOUNT SETTINGS) ----------------
+              Theme(
+                data: ThemeData.dark().copyWith(
+                  textTheme: ThemeData.dark().textTheme.apply(
+                    fontFamily: 'Montserrat',
                   ),
-                  socialLinks: social,
-                  columns: columns,
-                  copyright:
-                      "© 2025 ChemRevolutions.com. All rights reserved.",
+                ),
+                child: ColoredBox(
+                  color: const Color.fromARGB(255, 8, 8, 8),
+                  child: Footer(
+                    logo: FooterLogo(
+                      image: Image.asset(
+                        'assets/icons/chemo.png',
+                        fit: BoxFit.contain,
+                      ),
+                      onTapUrl: "https://chemrevolutions.com",
+                    ),
+                    socialLinks: social,
+                    columns: columns,
+                    copyright:
+                        "© 2025 ChemRevolutions.com. All rights reserved.",
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

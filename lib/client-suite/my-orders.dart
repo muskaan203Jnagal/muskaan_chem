@@ -26,31 +26,34 @@ class MyOrdersPage extends StatelessWidget {
 
     return AppScaffold(
       currentPage: "PROFILE",
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // -------- PROFILE TABS --------
-            const TopBannerTabs(active: AccountTab.orders),
+      body: Container(
+        color: Colors.white,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // -------- PROFILE TABS --------
+              const TopBannerTabs(active: AccountTab.orders),
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-            user == null
-                ? const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(40),
-                      child: Text(
-                        "Please login to view your orders.",
-                        style: TextStyle(fontSize: 18),
+              user == null
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(40),
+                        child: Text(
+                          "Please login to view your orders.",
+                          style: TextStyle(fontSize: 18),
+                        ),
                       ),
-                    ),
-                  )
-                : OrdersList(userId: user.uid),
+                    )
+                  : OrdersList(userId: user.uid),
 
-            const SizedBox(height: 50),
+              const SizedBox(height: 50),
 
-            // -------- FOOTER --------
-            _buildFooter(),
-          ],
+              // -------- FOOTER --------
+              _buildFooter(),
+            ],
+          ),
         ),
       ),
     );
@@ -58,33 +61,48 @@ class MyOrdersPage extends StatelessWidget {
 
   Widget _buildFooter() {
     final social = [
-      SocialLink(icon: FontAwesomeIcons.instagram, url: 'https://instagram.com'),
+      SocialLink(
+        icon: FontAwesomeIcons.instagram,
+        url: 'https://instagram.com',
+      ),
       SocialLink(icon: FontAwesomeIcons.facebookF, url: 'https://facebook.com'),
       SocialLink(icon: FontAwesomeIcons.twitter, url: 'https://twitter.com'),
     ];
 
     final columns = [
-      FooterColumn(title: 'QUICK LINKS', items: [
-        FooterItem(label: 'Home', url: "/"),
-        FooterItem(label: 'Categories'),
-        FooterItem(label: 'Product Detail'),
-        FooterItem(label: 'Contact Us'),
-      ]),
-      FooterColumn(title: 'CUSTOMER SERVICE', items: [
-        FooterItem(label: 'My Account'),
-        FooterItem(label: 'Order Status'),
-        FooterItem(label: 'Wishlist'),
-      ]),
-      FooterColumn(title: 'INFORMATION', items: [
-        FooterItem(label: 'About Us'),
-        FooterItem(label: 'Privacy Policy'),
-        FooterItem(label: 'Data Collection'),
-      ]),
-      FooterColumn(title: 'POLICIES', items: [
-        FooterItem(label: 'Privacy Policy'),
-        FooterItem(label: 'Data Collection'),
-        FooterItem(label: 'Terms & Conditions'),
-      ]),
+      FooterColumn(
+        title: 'QUICK LINKS',
+        items: [
+          FooterItem(label: 'Home', url: "/"),
+          FooterItem(label: 'Categories'),
+          FooterItem(label: 'Product Detail'),
+          FooterItem(label: 'Contact Us'),
+        ],
+      ),
+      FooterColumn(
+        title: 'CUSTOMER SERVICE',
+        items: [
+          FooterItem(label: 'My Account'),
+          FooterItem(label: 'Order Status'),
+          FooterItem(label: 'Wishlist'),
+        ],
+      ),
+      FooterColumn(
+        title: 'INFORMATION',
+        items: [
+          FooterItem(label: 'About Us'),
+          FooterItem(label: 'Privacy Policy'),
+          FooterItem(label: 'Data Collection'),
+        ],
+      ),
+      FooterColumn(
+        title: 'POLICIES',
+        items: [
+          FooterItem(label: 'Privacy Policy'),
+          FooterItem(label: 'Data Collection'),
+          FooterItem(label: 'Terms & Conditions'),
+        ],
+      ),
     ];
 
     return ColoredBox(
@@ -96,8 +114,7 @@ class MyOrdersPage extends StatelessWidget {
         ),
         socialLinks: social,
         columns: columns,
-        copyright:
-            "© 2025 ChemRevolutions.com. All rights reserved.",
+        copyright: "© 2025 ChemRevolutions.com. All rights reserved.",
       ),
     );
   }
@@ -173,15 +190,13 @@ class OrdersList extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final data = orders[index].data() as Map<String, dynamic>;
                   final orderId = orders[index].id.substring(0, 8);
-                  final orderDate =
-                      (data['orderDate'] as Timestamp).toDate();
+                  final orderDate = (data['orderDate'] as Timestamp).toDate();
                   final formattedDate =
                       "${orderDate.day} ${_month(orderDate.month)} ${orderDate.year}";
 
                   final total = data['totalAmount'].toString();
                   final status = data['status'] ?? "Processing";
-                  final itemsCount =
-                      (data['items'] as List).length.toString();
+                  final itemsCount = (data['items'] as List).length.toString();
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 25),
@@ -213,7 +228,9 @@ class OrdersList extends StatelessWidget {
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 6),
+                                horizontal: 14,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: _statusColor(status),
                                 borderRadius: BorderRadius.circular(20),
@@ -221,7 +238,9 @@ class OrdersList extends StatelessWidget {
                               child: Text(
                                 status,
                                 style: const TextStyle(
-                                    color: Colors.white, fontSize: 14),
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
                               ),
                             ),
                           ],
@@ -269,8 +288,19 @@ class OrdersList extends StatelessWidget {
 
   String _month(int m) {
     const months = [
-      "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      "",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ];
     return months[m];
   }

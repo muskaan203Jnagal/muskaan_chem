@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:chem_revolutions/homepage/homepage.dart';
+import 'package:flutter/services.dart';
+import 'dart:ui';
+
 
 // Use same header/footer wiring as homepage
 import '/header.dart';
@@ -383,7 +385,9 @@ class _BlackPanelState extends State<_BlackPanel> {
   }
 }
 
-/// ---------- FORM AREA with Firestore submit (unchanged) ----------
+/// ---------- FORM AREA with Firestore submit (notification added) ----------
+/// ---------- FORM AREA with Firestore submit + SUCCESS MODAL ----------
+/// ---------- FORM AREA with Firestore submit + UX Enhancements ----------
 class _FormArea extends StatefulWidget {
   const _FormArea({super.key});
 
@@ -394,7 +398,6 @@ class _FormArea extends StatefulWidget {
 class _FormAreaState extends State<_FormArea> {
   final _formKey = GlobalKey<FormState>();
 
-  // controllers
   final TextEditingController _first = TextEditingController();
   final TextEditingController _last = TextEditingController();
   final TextEditingController _email = TextEditingController();
@@ -403,6 +406,7 @@ class _FormAreaState extends State<_FormArea> {
 
   String? _subject = 'General Inquiry';
   bool _submitting = false;
+  bool _showSuccess = false;
 
   @override
   void dispose() {
@@ -414,41 +418,52 @@ class _FormAreaState extends State<_FormArea> {
     super.dispose();
   }
 
+  bool get _isFormValid {
+  return _first.text.trim().isNotEmpty &&
+      _last.text.trim().isNotEmpty &&
+      _email.text.trim().isNotEmpty &&
+      RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+          .hasMatch(_email.text.trim()) &&
+      _phone.text.trim().length == 10 &&
+      _message.text.trim().isNotEmpty;
+}
+
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_isFormValid) return;
 
     setState(() => _submitting = true);
 
     try {
-      final data = {
+      await FirebaseFirestore.instance
+          .collection('contactSubmissions')
+          .add({
         'firstName': _first.text.trim(),
         'lastName': _last.text.trim(),
         'email': _email.text.trim(),
         'phone': _phone.text.trim(),
-        'subject': _subject ?? 'General Inquiry',
+        'subject': _subject,
         'message': _message.text.trim(),
         'timestamp': FieldValue.serverTimestamp(),
         'isRead': false,
-      };
+      });
 
-      await FirebaseFirestore.instance.collection('contactSubmissions').add(data);
+      if (!mounted) return;
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Message sent — thank you!')));
-        _formKey.currentState!.reset();
-        _first.clear();
-        _last.clear();
-        _email.clear();
-        _phone.clear();
-        _message.clear();
-        setState(() {
-          _subject = 'General Inquiry';
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
-      }
+      _formKey.currentState!.reset();
+      _first.clear();
+      _last.clear();
+      _email.clear();
+      _phone.clear();
+      _message.clear();
+
+      setState(() {
+        _subject = 'General Inquiry';
+        _showSuccess = true;
+      });
+
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) setState(() => _showSuccess = false);
+      });
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -468,152 +483,183 @@ class _FormAreaState extends State<_FormArea> {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
         child: DefaultTextStyle(
           style: GoogleFonts.montserrat(color: Colors.black87),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // ✅ BLUR BACKGROUND WHEN MODAL SHOWS
+      
+          
 
-Row(
-  children: [
-    Expanded(
-      child: _labelledUnderlineField(
-        controller: _first,
-        label: 'First Name',
-        validator: (v) {
-          if (v == null || v.trim().isEmpty) {
-            return 'First name is required';
-          }
-          return null;
-        },
-      ),
-    ),
-    const SizedBox(width: 18),
-    Expanded(
-      child: _labelledUnderlineField(
-        controller: _last,
-        label: 'Last Name',
-        validator: (v) {
-          if (v == null || v.trim().isEmpty) {
-            return 'Last name is required';
-          }
-          return null;
-        },
-      ),
-    ),
-  ],
-),
+         Form(
+  key: _formKey,
+  autovalidateMode: AutovalidateMode.onUserInteraction,
+ child: ScrollConfiguration(
+  behavior: const _NoScrollbar(),
+  child: SingleChildScrollView(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
 
-                const SizedBox(height: 12),
-                _labelledUnderlineField(
-                  controller: _email,
-                  label: 'Email',
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Enter email';
-                    final re = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                    if (!re.hasMatch(v.trim())) return 'Enter valid email';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-               _labelledUnderlineField(
-  controller: _phone,
-  label: 'Phone Number',
-  validator: (v) {
-    if (v == null || v.trim().isEmpty) {
-      return 'Phone number is required';
-    }
-    if (v.trim().length < 10) {
-      return 'Enter a valid phone number';
-    }
-    return null;
-  },
-),
 
-                const SizedBox(height: 18),
 
-                Text('Select Subject?', style: GoogleFonts.montserrat(fontSize: 13, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 6,
-                  children: [
-                    _radioTile('General Inquiry'),
-                    _radioTile('Suggestions'),
-                    _radioTile('Product'),
-                    _radioTile('Other'),
-                  ],
-                ),
-                const SizedBox(height: 18),
-
-                Text('Message', style: GoogleFonts.montserrat(fontSize: 13, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 6),
-                Container(
-                  height: 160,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                  decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1)),
-                  ),
-                  child: TextFormField(
-                    controller: _message,
-                    maxLines: 6,
-                    cursorColor: Colors.black,
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Please enter a message';
-                      return null;
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Write your message..',
-                      hintStyle: GoogleFonts.montserrat(fontSize: 13, color: Colors.grey),
-                      border: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      enabledBorder: InputBorder.none,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _field(
+                            controller: _first,
+                            label: 'First Name',
+                            validator: (v) =>
+                                v == null || v.trim().isEmpty
+                                    ? 'First name is required'
+                                    : null,
+                          ),
+                        ),
+                        const SizedBox(width: 18),
+                        Expanded(
+                          child: _field(
+                            controller: _last,
+                            label: 'Last Name',
+                            validator: (v) =>
+                                v == null || v.trim().isEmpty
+                                    ? 'Last name is required'
+                                    : null,
+                          ),
+                        ),
+                      ],
                     ),
-                    style: GoogleFonts.montserrat(color: Colors.black),
-                  ),
-                ),
 
-                const Spacer(),
+                    const SizedBox(height: 12),
+                    _field(
+                      controller: _email,
+                      label: 'Email',
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Enter email';
+                        }
+                        if (!RegExp(
+                                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+                            .hasMatch(v.trim())) {
+                          return 'Enter valid email';
+                        }
+                        return null;
+                      },
+                    ),
 
-                Center(
-                  child: SizedBox(
-                    width: 260,
-                    child: ElevatedButton(
-                      onPressed: _submitting ? null : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        elevation: 10,
-                        shadowColor: Colors.black38,
+                    const SizedBox(height: 12),
+                    _field(
+                      controller: _phone,
+                      label: 'Phone Number',
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Phone number is required';
+                        }
+                        if (v.trim().length != 10) {
+                          return 'Enter a valid 10-digit phone number';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 18),
+                    Text(
+                      'Select Subject?',
+                      style: GoogleFonts.montserrat(
+                          fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 6,
+                      children: [
+                        _radioTile('General Inquiry'),
+                        _radioTile('Suggestions'),
+                        _radioTile('Product'),
+                        _radioTile('Other'),
+                      ],
+                    ),
+
+                    const SizedBox(height: 18),
+                    Text(
+                      'Message',
+                      style: GoogleFonts.montserrat(
+                          fontSize: 13, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 160,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom:
+                              BorderSide(color: Colors.grey.shade300),
+                        ),
                       ),
-                      child: _submitting
-                          ? Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const SizedBox(width: 6),
-                                const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-                                const SizedBox(width: 12),
-                                Text('Sending...', style: GoogleFonts.montserrat(color: Colors.white)),
-                              ],
-                            )
-                          : Row(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text('Send Message', style: GoogleFonts.montserrat(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-                                const SizedBox(width: 12),
-                                const Icon(Icons.send, color: Colors.white, size: 18),
-                              ],
-                            ),
+                      child: TextFormField(
+                        controller: _message,
+                        maxLines: 6,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) => _submit(),
+                        validator: (v) =>
+                            v == null || v.trim().isEmpty
+                                ? 'Please enter a message'
+                                : null,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 12),
-              ],
-            ),
+                   const SizedBox(height: 24),
+
+
+                    Center(
+                      child: SizedBox(
+                        width: 260,
+                        child: ElevatedButton(
+                          onPressed: (!_submitting && _isFormValid)
+                              ? _submit
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: _submitting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child:
+                                      CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white),
+                                )
+                              : const Text(
+                                  'Send Message',
+                                  style:
+                                      TextStyle(color: Colors.white),
+                                ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+        ],
+      ),
+    ),
+  ),
+),
+
+              // ✅ SUCCESS MODAL
+              _SuccessModal(show: _showSuccess),
+            ],
           ),
         ),
       ),
@@ -632,43 +678,130 @@ Row(
             activeColor: Colors.black,
             onChanged: (v) => setState(() => _subject = v),
           ),
-          const SizedBox(width: 4),
-          Text(label, style: GoogleFonts.montserrat(fontSize: 12)),
+          Text(label,
+              style: GoogleFonts.montserrat(fontSize: 12)),
         ],
       ),
     );
   }
 
-  Widget _labelledUnderlineField({
+  Widget _field({
     required TextEditingController controller,
     required String label,
     String? Function(String?)? validator,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.montserrat(fontSize: 12, color: Colors.black54)),
+        Text(label,
+            style: GoogleFonts.montserrat(
+                fontSize: 12, color: Colors.black54)),
         const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: Colors.grey.shade300, width: 1.2)),
-          ),
-          child: TextFormField(
-            controller: controller,
-            cursorColor: Colors.black,
-            validator: validator,
-            decoration: InputDecoration(
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(vertical: 10),
-              border: InputBorder.none,
-              hintText: label == 'Email' ? 'email@example.com' : null,
-              enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey.shade300, width: 1.2)),
-              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.black, width: 1.2)),
+        TextFormField(
+          controller: controller,
+          validator: validator,
+          keyboardType: keyboardType,
+          inputFormatters: inputFormatters,
+          cursorColor: Colors.black,
+           onChanged: (_) => setState(() {}),
+
+          decoration: const InputDecoration(
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: Colors.black),
             ),
-            style: GoogleFonts.montserrat(fontSize: 13),
+            focusedBorder: UnderlineInputBorder(
+              borderSide:
+                  BorderSide(color: Colors.black, width: 1.6),
+            ),
           ),
         ),
       ],
     );
+  }
+}
+
+/// ---------- SUCCESS MODAL ----------
+class _SuccessModal extends StatelessWidget {
+  final bool show;
+  const _SuccessModal({required this.show});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      ignoring: !show,
+      child: AnimatedOpacity(
+        opacity: show ? 1 : 0,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
+        child: AnimatedScale(
+          scale: show ? 1 : 0.95,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeOutExpo,
+          child: Container(
+            width: 380,
+            padding: const EdgeInsets.symmetric(
+                horizontal: 26, vertical: 24),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFFF5A800),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.45),
+                  blurRadius: 30,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.check_circle,
+                  size: 42,
+                  color: Color(0xFFF5A800),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Message Sent Successfully',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Thank you for reaching out.\nOur team will contact you shortly.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.montserrat(
+                    color: Colors.white70,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+class _NoScrollbar extends ScrollBehavior {
+  const _NoScrollbar();
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child; // hides scrollbar visually
   }
 }
