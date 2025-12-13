@@ -69,7 +69,7 @@ class _PolicyPageBState extends State<PolicyPageB> {
         Text("Contact Us:\n"),
         Text("Email: support@example.com"),
         SizedBox(height: 8),
-        Text("Phone: +91 98765 43210"),
+        Text("Phone: +91 98765 xxxxx"),
         SizedBox(height: 8),
         Text("Address: Model Town, Jalandhar, Punjab"),
       ],
@@ -388,4 +388,5 @@ class _PolicyPageBState extends State<PolicyPageB> {
     );
   }
 }
+
 //12-12-25

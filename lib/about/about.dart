@@ -420,7 +420,9 @@ class _AboutPageState extends State<AboutPage>
                           const SizedBox(height: 22),
 
                           ElevatedButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.pushNamed(context, "/product");
+                            },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black,
                               elevation: 6,
@@ -622,7 +624,12 @@ class _AboutPageState extends State<AboutPage>
                                 return Column(
                                   children: [
                                     TextButton(
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          "/product",
+                                        );
+                                      },
                                       style: TextButton.styleFrom(
                                         backgroundColor: Colors.black,
                                         padding: EdgeInsets.symmetric(
@@ -645,7 +652,12 @@ class _AboutPageState extends State<AboutPage>
                                     ),
                                     SizedBox(height: 12),
                                     OutlinedButton(
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          "/contact",
+                                        );
+                                      },
                                       style: OutlinedButton.styleFrom(
                                         side: BorderSide(color: Colors.white70),
                                         padding: EdgeInsets.symmetric(
@@ -667,7 +679,9 @@ class _AboutPageState extends State<AboutPage>
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   TextButton(
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, "/product");
+                                    },
                                     style: TextButton.styleFrom(
                                       backgroundColor: Colors.black,
                                       padding: EdgeInsets.symmetric(
@@ -688,7 +702,9 @@ class _AboutPageState extends State<AboutPage>
                                   ),
                                   SizedBox(width: 14),
                                   OutlinedButton(
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      Navigator.pushNamed(context, "/contact");
+                                    },
                                     style: OutlinedButton.styleFrom(
                                       side: BorderSide(color: Colors.white70),
                                       padding: EdgeInsets.symmetric(
