@@ -11,6 +11,7 @@ import 'marketing.dart';
 import 'reviews_moderation.dart';
 import 'orders.dart';
 import 'shipping.dart';
+import 'verification_codes.dart';
 
 // Dashboard (kept in lib/dashboard.dart)
 import 'dashboard.dart';
@@ -40,6 +41,7 @@ class _AdminPageState extends State<AdminPage> {
   final List<Widget> _pages = [
     const DashboardPage(), // Dashboard
     const CatalogPage(),        // Catalog
+     const VerificationCodesPage(), //generate pages
     const InboxPage(),          // Inbox
     const UsersPage(),          // Users
     const MarketingPage(),      // Marketing
@@ -54,6 +56,7 @@ class _AdminPageState extends State<AdminPage> {
   final List<_NavItem> _navItems = const [
     _NavItem(Icons.dashboard, 'Dashboard'),
     _NavItem(Icons.inventory, 'Catalog'),
+    _NavItem(Icons.verified, 'Verification Codes'),
     _NavItem(Icons.inbox, 'Inbox'),
     _NavItem(Icons.people_alt, 'Users'),
     _NavItem(Icons.local_offer, 'Marketing'),
